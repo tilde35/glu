@@ -15,6 +15,7 @@ pub type ScanCode = u32;
 pub type ButtonId = u32;
 pub type FingerId = u64;
 
+/// An event from OpenGL. This is a simplified version of the events provided by winit.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Event {
     AppAwaken,
@@ -274,6 +275,7 @@ impl Event {
     }
 }
 
+/// Describes a button of a mouse controller.
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum MouseButton {
     Left,
@@ -291,6 +293,7 @@ impl MouseButton {
         }
     }
 }
+/// Describes touch-screen input state.
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub enum TouchPhase {
     Started,
@@ -307,14 +310,4 @@ impl TouchPhase {
             gl::TouchPhase::Cancelled => TouchPhase::Cancelled,
         }
     }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
-pub enum EventStatus {
-    Consumed,
-    Available,
-}
-impl EventStatus {
-    pub fn is_consumed(&self) -> bool { *self == EventStatus::Consumed }
-    pub fn is_available(&self) -> bool { *self == EventStatus::Available }
 }

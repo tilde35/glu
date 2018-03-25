@@ -1,6 +1,8 @@
 use event::{Event, MouseButton};
 use glium::glutin as gl;
 
+/// Persistant state associated with the events. This keeps track of things like which control keys
+/// are currently pressed, location of the mouse, and the state of the mouse buttons.
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct EventState {
     pub mouse_pos: (i32, i32),
@@ -62,11 +64,17 @@ impl EventState {
     }
 }
 
+
+/// Current state of the specified mouse button.
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct MouseButtonState {
+    /// Which mouse button this is for.
     pub button: MouseButton,
+    /// Indicates if the button is currently being pressed down by the user.
     pub pressed: bool,
+    /// Location where the mouse button was last pressed.
     pub pressed_at: (i32, i32),
+    /// Indicates if the user pressed escape while the mouse button was down.
     pub cancelled: bool,
 }
 impl Default for MouseButtonState {

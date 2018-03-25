@@ -10,11 +10,27 @@ struct AsciiVertex {
 }
 implement_vertex!(AsciiVertex, position, color, texcoord);
 
+/// ASCII text screen writer. This is useful for displaying simple messages on the screen using ASCII text.
+///
+/// # Examples
+///
+/// ```
+/// let ascii_text = AsciiText::new(&display);
+/// loop {
+///   let target = display.draw();
+///   target.clear_color_and_depth((0.01, 0.0, 0.1, 1.0), 1.0);
+///
+///   ascii_text.draw_white(&display, &mut target, "Sample Text", 1.5, [10.0, 10.0]);
+///
+///   target.finish().unwrap();
+/// }
+/// ```
 pub struct AsciiText {
     ascii_texture: glium::texture::Texture2d,
     ascii_program: glium::Program,
 }
 impl AsciiText {
+    /// Creates and initializes the ASCII texture and shaders.
     pub fn new(display: &glium::Display) -> Self {
         let raw = ascii_raw_img();
 
@@ -32,13 +48,20 @@ impl AsciiText {
         }
     }
 
+    /// Draws the specified text in white (see draw method for more information).
     pub fn draw_white<DrawSurface: glium::Surface>(&self, display: &glium::Display, target: &mut DrawSurface, txt: &str, scale: f32, pos: [f32; 2]) {
         self.draw(display, target, txt, scale, pos, [1.0, 1.0, 1.0, 1.0])
     }
+    /// Draws the specified text in black (see draw method for more information).
     pub fn draw_black<DrawSurface: glium::Surface>(&self, display: &glium::Display, target: &mut DrawSurface, txt: &str, scale: f32, pos: [f32; 2]) {
         self.draw(display, target, txt, scale, pos, [0.0, 0.0, 0.0, 1.0])
     }
 
+    /// Draws the specified text to the screen.
+    ///
+    /// The scale determines the size of the text (where 1.0 is 8 pixels high). The position is the
+    /// location on the window from the upper-left corner. The color is in RGBA format (alpha
+    /// blending is supported).
     pub fn draw<DrawSurface: glium::Surface>(&self, display: &glium::Display, target: &mut DrawSurface, txt: &str, scale: f32, pos: [f32; 2], color: [f32; 4]) {
         let win_size = display.get_context().get_framebuffer_dimensions();
 

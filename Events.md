@@ -1,6 +1,6 @@
 # Event Quick-Reference #
 
-Both the original events and the virtual key codes are found in the [winit events file](https://github.com/tomaka/winit/blob/master/src/events.rs).
+Both the original events and the virtual key codes were derived from the [winit events file](https://github.com/tomaka/winit/blob/master/src/events.rs).
 
 ## Complete Match Statement ##
 
