@@ -3,6 +3,7 @@
 //! This is a collection of simple OpenGL utilities to make writing OpenGL applications a little easier.
 //!
 //! Main components:
+//!
 //! - AsciiText
 //! - Event
 //! - EventState
