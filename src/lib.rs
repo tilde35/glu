@@ -10,4 +10,5 @@ mod time_step;
 pub use ascii_text::AsciiText;
 pub use event::{AxisId, ButtonId, Event, EventStatus, FingerId, MouseButton, ScanCode, TouchPhase};
 pub use event_state::{EventState, MouseButtonState};
+pub use glium::glutin::{DeviceId, VirtualKeyCode, WindowId};
 pub use time_step::TimeStep;

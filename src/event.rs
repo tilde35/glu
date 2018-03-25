@@ -6,9 +6,8 @@
 
 use event_state::{EventState, MouseButtonState};
 use glium::glutin as gl;
-pub use glium::glutin::DeviceId;
-pub use glium::glutin::VirtualKeyCode;
-pub use glium::glutin::WindowId;
+// Note: these are re-exported by lib.rs as well
+pub use glium::glutin::{DeviceId, VirtualKeyCode, WindowId};
 use std::path::PathBuf;
 
 pub type AxisId = u32;

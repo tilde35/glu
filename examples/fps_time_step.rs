@@ -4,7 +4,7 @@ extern crate glu;
 
 use fps_counter::FPSCounter;
 use glium::{glutin, Surface};
-use glu::{AsciiText, Event, EventState, TimeStep};
+use glu::{AsciiText, Event, EventState, TimeStep, VirtualKeyCode};
 
 fn main() {
     let win_size = (1024, 720);
@@ -33,6 +33,7 @@ fn main() {
             let e = Event::from_gl(&event, &mut event_state);
             match e {
                 Event::WindowClose(..) => exit = true,
+                Event::KeyDown(_, _, _, Some(VirtualKeyCode::X)) => exit = true,
                 _ => {}
             }
         });

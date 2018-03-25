@@ -29,6 +29,8 @@ ascii_text.draw_black(&display, &mut target, "Example Text", 2.0, [15.0, 15.0]);
 
 ## Events and Event State ##
 
+For more information, refer to the [event quick-reference guide](Events.md).
+
 ```rust
 use glu::{Event, EventState};
 
