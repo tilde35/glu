@@ -6,6 +6,7 @@ use glium::glutin as gl;
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct EventState {
     pub mouse_pos: [i32; 2],
+    pub mouse_activity_start: [i32; 2],
     pub mouse_in_window: bool,
     pub mouse_left: MouseButtonState,
     pub mouse_middle: MouseButtonState,
@@ -19,6 +20,7 @@ impl EventState {
     pub fn new() -> Self {
         Self {
             mouse_pos: [0, 0],
+            mouse_activity_start: [0, 0],
             mouse_in_window: false,
             mouse_left: MouseButtonState {
                 button: MouseButton::Left,

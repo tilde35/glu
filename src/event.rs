@@ -153,7 +153,9 @@ impl Event {
                 let x = position.0 as i32;
                 let y = position.1 as i32;
                 evt_state.mouse_pos = [x, y];
-                //evt_state.mouse_in_window=true;
+                if !evt_state.is_any_mouse_button_pressed() {
+                    evt_state.mouse_activity_start = [x, y];
+                }
                 Event::MouseMove(id, device_id, x, y)
             }
             gl::WindowEvent::CursorEntered { device_id } => {
