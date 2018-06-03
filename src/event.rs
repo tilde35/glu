@@ -69,13 +69,13 @@ pub enum Event {
 impl Event {
     pub fn is_mouse_event(&self) -> bool {
         match *self {
-            Event::MouseMove(..) |
-            Event::MouseDown(..) |
-            Event::MouseUp(..) |
-            Event::MouseWheelByLine(..) |
-            Event::MouseWheelByPixel(..) |
-            Event::MouseWindowEnter(..) |
-            Event::MouseWindowLeave(..) => true,
+            Event::MouseMove(..)
+            | Event::MouseDown(..)
+            | Event::MouseUp(..)
+            | Event::MouseWheelByLine(..)
+            | Event::MouseWheelByPixel(..)
+            | Event::MouseWindowEnter(..)
+            | Event::MouseWindowLeave(..) => true,
             _ => false,
         }
     }
@@ -136,8 +136,12 @@ impl Event {
                 }
 
                 match input.state {
-                    gl::ElementState::Pressed => Event::KeyDown(id, device_id, input.scancode, input.virtual_keycode),
-                    gl::ElementState::Released => Event::KeyUp(id, device_id, input.scancode, input.virtual_keycode),
+                    gl::ElementState::Pressed => {
+                        Event::KeyDown(id, device_id, input.scancode, input.virtual_keycode)
+                    }
+                    gl::ElementState::Released => {
+                        Event::KeyUp(id, device_id, input.scancode, input.virtual_keycode)
+                    }
                 }
             }
 
@@ -148,7 +152,7 @@ impl Event {
             } => {
                 let x = position.0 as i32;
                 let y = position.1 as i32;
-                evt_state.mouse_pos = (x, y);
+                evt_state.mouse_pos = [x, y];
                 //evt_state.mouse_in_window=true;
                 Event::MouseMove(id, device_id, x, y)
             }
@@ -166,8 +170,12 @@ impl Event {
                 phase,
                 modifiers: _,
             } => match delta {
-                gl::MouseScrollDelta::LineDelta(dx, dy) => Event::MouseWheelByLine(id, device_id, dx, dy, TouchPhase::from_gl(phase)),
-                gl::MouseScrollDelta::PixelDelta(dx, dy) => Event::MouseWheelByPixel(id, device_id, dx, dy, TouchPhase::from_gl(phase)),
+                gl::MouseScrollDelta::LineDelta(dx, dy) => {
+                    Event::MouseWheelByLine(id, device_id, dx, dy, TouchPhase::from_gl(phase))
+                }
+                gl::MouseScrollDelta::PixelDelta(dx, dy) => {
+                    Event::MouseWheelByPixel(id, device_id, dx, dy, TouchPhase::from_gl(phase))
+                }
             },
             gl::WindowEvent::MouseInput {
                 device_id,
@@ -236,15 +244,24 @@ impl Event {
             gl::DeviceEvent::Key(key_input) => {
                 Self::set_modifiers(state, &key_input.modifiers);
                 match key_input.state {
-                    gl::ElementState::Pressed => Event::DeviceKeyDown(id, key_input.scancode, key_input.virtual_keycode),
-                    gl::ElementState::Released => Event::DeviceKeyUp(id, key_input.scancode, key_input.virtual_keycode),
+                    gl::ElementState::Pressed => {
+                        Event::DeviceKeyDown(id, key_input.scancode, key_input.virtual_keycode)
+                    }
+                    gl::ElementState::Released => {
+                        Event::DeviceKeyUp(id, key_input.scancode, key_input.virtual_keycode)
+                    }
                 }
             }
-            gl::DeviceEvent::Text { codepoint } => Event::DeviceText(id, codepoint, Self::text_char(codepoint)),
+            gl::DeviceEvent::Text { codepoint } => {
+                Event::DeviceText(id, codepoint, Self::text_char(codepoint))
+            }
         }
     }
 
-    fn mouse_data_for<'a>(state: &'a mut EventState, b: gl::MouseButton) -> Option<&'a mut MouseButtonState> {
+    fn mouse_data_for<'a>(
+        state: &'a mut EventState,
+        b: gl::MouseButton,
+    ) -> Option<&'a mut MouseButtonState> {
         match b {
             gl::MouseButton::Left => Some(&mut state.mouse_left),
             gl::MouseButton::Middle => Some(&mut state.mouse_middle),

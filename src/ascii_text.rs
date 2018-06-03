@@ -43,17 +43,32 @@ impl AsciiText {
         ).expect("Failed to compile ASCII shader: ascii_text.glsl");
 
         Self {
-            ascii_texture: glium::texture::Texture2d::new(display, raw).expect("Failed to load ASCII texture"),
+            ascii_texture: glium::texture::Texture2d::new(display, raw)
+                .expect("Failed to load ASCII texture"),
             ascii_program: program,
         }
     }
 
     /// Draws the specified text in white (see draw method for more information).
-    pub fn draw_white<DrawSurface: glium::Surface>(&self, display: &glium::Display, target: &mut DrawSurface, txt: &str, scale: f32, pos: [f32; 2]) {
+    pub fn draw_white<DrawSurface: glium::Surface>(
+        &self,
+        display: &glium::Display,
+        target: &mut DrawSurface,
+        txt: &str,
+        scale: f32,
+        pos: [f32; 2],
+    ) {
         self.draw(display, target, txt, scale, pos, [1.0, 1.0, 1.0, 1.0])
     }
     /// Draws the specified text in black (see draw method for more information).
-    pub fn draw_black<DrawSurface: glium::Surface>(&self, display: &glium::Display, target: &mut DrawSurface, txt: &str, scale: f32, pos: [f32; 2]) {
+    pub fn draw_black<DrawSurface: glium::Surface>(
+        &self,
+        display: &glium::Display,
+        target: &mut DrawSurface,
+        txt: &str,
+        scale: f32,
+        pos: [f32; 2],
+    ) {
         self.draw(display, target, txt, scale, pos, [0.0, 0.0, 0.0, 1.0])
     }
 
@@ -62,7 +77,15 @@ impl AsciiText {
     /// The scale determines the size of the text (where 1.0 is 8 pixels high). The position is the
     /// location on the window from the upper-left corner. The color is in RGBA format (alpha
     /// blending is supported).
-    pub fn draw<DrawSurface: glium::Surface>(&self, display: &glium::Display, target: &mut DrawSurface, txt: &str, scale: f32, pos: [f32; 2], color: [f32; 4]) {
+    pub fn draw<DrawSurface: glium::Surface>(
+        &self,
+        display: &glium::Display,
+        target: &mut DrawSurface,
+        txt: &str,
+        scale: f32,
+        pos: [f32; 2],
+        color: [f32; 4],
+    ) {
         let win_size = display.get_context().get_framebuffer_dimensions();
 
         let transform = {
@@ -116,7 +139,8 @@ impl AsciiText {
             }
         }
 
-        let vertex_buffer = glium::VertexBuffer::immutable(display, &vertex_data).expect("Failed to create ASCII vertex buffer");
+        let vertex_buffer = glium::VertexBuffer::immutable(display, &vertex_data)
+            .expect("Failed to create ASCII vertex buffer");
         let indices = glium::index::IndexBuffer::immutable(
             display,
             glium::index::PrimitiveType::TrianglesList,
@@ -135,7 +159,14 @@ impl AsciiText {
     }
 }
 
-fn add_glyph(vertex_data: &mut Vec<AsciiVertex>, index_data: &mut Vec<u32>, glyph: u8, dim: f32, pos: [f32; 2], color: [f32; 4]) {
+fn add_glyph(
+    vertex_data: &mut Vec<AsciiVertex>,
+    index_data: &mut Vec<u32>,
+    glyph: u8,
+    dim: f32,
+    pos: [f32; 2],
+    color: [f32; 4],
+) {
     let idx = vertex_data.len() as u32;
 
     let x = pos[0];
