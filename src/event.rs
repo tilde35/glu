@@ -288,6 +288,8 @@ impl Event {
             } else {
                 None
             }
+        } else if ch == '\u{7f}' {
+            None
         } else {
             Some(ch)
         }
