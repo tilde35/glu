@@ -25,6 +25,7 @@ pub enum Event {
     WindowResize(WindowId, u32, u32),
     WindowMove(WindowId, i32, i32),
     WindowClose(WindowId),
+    WindowDestroyed(WindowId),
     WindowRefresh(WindowId),
     WindowFocus(WindowId),
     WindowBlur(WindowId),
@@ -103,7 +104,8 @@ impl Event {
         match *evt {
             gl::WindowEvent::Resized(w, h) => Event::WindowResize(id, w, h),
             gl::WindowEvent::Moved(x, y) => Event::WindowMove(id, x, y),
-            gl::WindowEvent::Closed => Event::WindowClose(id),
+            gl::WindowEvent::CloseRequested => Event::WindowClose(id),
+            gl::WindowEvent::Destroyed => Event::WindowDestroyed(id),
             gl::WindowEvent::Refresh => Event::WindowRefresh(id),
             gl::WindowEvent::Focused(true) => Event::WindowFocus(id),
             gl::WindowEvent::Focused(false) => Event::WindowBlur(id),
