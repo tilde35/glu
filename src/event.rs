@@ -102,8 +102,16 @@ impl Event {
 
     fn from_window_event(id: WindowId, evt: &gl::WindowEvent, evt_state: &mut EventState) -> Event {
         match *evt {
-            gl::WindowEvent::Resized(w, h) => Event::WindowResize(id, w, h),
-            gl::WindowEvent::Moved(x, y) => Event::WindowMove(id, x, y),
+            gl::WindowEvent::Resized(logical_size) => {
+                let phys_size = logical_size.to_physical(evt_state.hidpi_factor);
+                let size: (u32, u32) = phys_size.into();
+                Event::WindowResize(id, size.0, size.1)
+            },
+            gl::WindowEvent::Moved(logical_pos) => {
+                let phys_pos = logical_pos.to_physical(evt_state.hidpi_factor);
+                let size: (i32, i32) = phys_pos.into();
+                Event::WindowMove(id, size.0, size.1)
+            },
             gl::WindowEvent::CloseRequested => Event::WindowClose(id),
             gl::WindowEvent::Destroyed => Event::WindowDestroyed(id),
             gl::WindowEvent::Refresh => Event::WindowRefresh(id),
@@ -152,8 +160,9 @@ impl Event {
                 position,
                 modifiers: _,
             } => {
-                let x = position.0 as i32;
-                let y = position.1 as i32;
+                let phys_position = position.to_physical(evt_state.hidpi_factor);
+                let pos: (i32, i32) = phys_position.into();
+                let (x, y) = pos;
                 evt_state.mouse_pos = [x, y];
                 if !evt_state.is_any_mouse_button_pressed() {
                     evt_state.mouse_activity_start = [x, y];
@@ -177,8 +186,11 @@ impl Event {
                 gl::MouseScrollDelta::LineDelta(dx, dy) => {
                     Event::MouseWheelByLine(id, device_id, dx, dy, TouchPhase::from_gl(phase))
                 }
-                gl::MouseScrollDelta::PixelDelta(dx, dy) => {
-                    Event::MouseWheelByPixel(id, device_id, dx, dy, TouchPhase::from_gl(phase))
+                gl::MouseScrollDelta::PixelDelta(logical_pos) => {
+                    let phys_pos = logical_pos.to_physical(evt_state.hidpi_factor);
+                    let delta: (i32, i32) = phys_pos.into();
+                    let (dx, dy) = delta;
+                    Event::MouseWheelByPixel(id, device_id, dx as f32, dy as f32, TouchPhase::from_gl(phase))
                 }
             },
             gl::WindowEvent::MouseInput {
@@ -215,15 +227,19 @@ impl Event {
                 pressure,
                 stage,
             } => Event::TouchpadPressure(id, device_id, pressure, stage),
-            gl::WindowEvent::Touch(ref t) => Event::Touch(
-                id,
-                t.device_id,
-                t.id,
-                t.location.0,
-                t.location.1,
-                TouchPhase::from_gl(t.phase),
-            ),
-            gl::WindowEvent::HiDPIFactorChanged(factor) => Event::HiDPIFactorChanged(factor),
+            gl::WindowEvent::Touch(ref t) => {
+                let phys_pos = t.location.to_physical(evt_state.hidpi_factor);
+                let pos: (f64, f64) = phys_pos.into();
+                Event::Touch(
+                    id,
+                    t.device_id,
+                    t.id,
+                    pos.0,
+                    pos.1,
+                    TouchPhase::from_gl(t.phase),
+                )
+            },
+            gl::WindowEvent::HiDpiFactorChanged(factor) => Event::HiDPIFactorChanged(factor as f32),
         }
     }
 
@@ -234,7 +250,12 @@ impl Event {
             gl::DeviceEvent::MouseMotion { delta } => Event::MouseMotion(id, delta.0, delta.1),
             gl::DeviceEvent::MouseWheel { delta } => match delta {
                 gl::MouseScrollDelta::LineDelta(dx, dy) => Event::AnyMouseWheelByLine(id, dx, dy),
-                gl::MouseScrollDelta::PixelDelta(dx, dy) => Event::AnyMouseWheelByPixel(id, dx, dy),
+                gl::MouseScrollDelta::PixelDelta(logical_pos) => {
+                    let phys_pos = logical_pos.to_physical(state.hidpi_factor);
+                    let delta: (i32, i32) = phys_pos.into();
+                    let (dx, dy) = delta;
+                    Event::AnyMouseWheelByPixel(id, dx as f32, dy as f32)
+                },
             },
             gl::DeviceEvent::Motion { axis, value } => Event::DeviceMotion(id, axis, value),
             gl::DeviceEvent::Button {

@@ -3,7 +3,7 @@ use glium::glutin as gl;
 
 /// Persistant state associated with the events. This keeps track of things like which control keys
 /// are currently pressed, location of the mouse, and the state of the mouse buttons.
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Debug)]
 pub struct EventState {
     pub mouse_pos: [i32; 2],
     pub mouse_activity_start: [i32; 2],
@@ -15,6 +15,7 @@ pub struct EventState {
     pub alt_down: bool,
     pub ctrl_down: bool,
     pub logo_down: bool,
+    pub hidpi_factor: f64,
 }
 impl EventState {
     pub fn new() -> Self {
@@ -38,6 +39,7 @@ impl EventState {
             alt_down: false,
             ctrl_down: false,
             logo_down: false,
+            hidpi_factor: 1.0,
         }
     }
 
