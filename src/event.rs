@@ -239,7 +239,10 @@ impl Event {
                     TouchPhase::from_gl(t.phase),
                 )
             },
-            gl::WindowEvent::HiDpiFactorChanged(factor) => Event::HiDPIFactorChanged(factor as f32),
+            gl::WindowEvent::HiDpiFactorChanged(factor) => {
+                evt_state.hidpi_factor = factor;
+                Event::HiDPIFactorChanged(factor as f32)
+            },
         }
     }
 
