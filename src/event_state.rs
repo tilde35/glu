@@ -1,4 +1,5 @@
 use event::{Event, MouseButton};
+use glium;
 use glium::glutin as gl;
 
 /// Persistant state associated with the events. This keeps track of things like which control keys
@@ -18,7 +19,10 @@ pub struct EventState {
     pub hidpi_factor: f64,
 }
 impl EventState {
-    pub fn new() -> Self {
+    pub fn new(display: &glium::Display) -> Self {
+        Self::new_with_dpi(display.gl_window().get_hidpi_factor())
+    }
+    pub fn new_with_dpi(hidpi_factor: f64) -> Self {
         Self {
             mouse_pos: [0, 0],
             mouse_activity_start: [0, 0],
@@ -39,7 +43,7 @@ impl EventState {
             alt_down: false,
             ctrl_down: false,
             logo_down: false,
-            hidpi_factor: 1.0,
+            hidpi_factor,
         }
     }
 

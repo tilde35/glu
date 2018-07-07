@@ -9,13 +9,13 @@ use glu::{AsciiText, Event, EventState, TimeStep, VirtualKeyCode};
 fn main() {
     let win_size = (1024, 720);
 
-    let mut event_state = EventState::new();
     let mut events_loop = glutin::EventsLoop::new();
     let window = glutin::WindowBuilder::new()
         .with_dimensions((win_size.0, win_size.1).into())
         .with_title("FPS and Time Step");
     let context = glutin::ContextBuilder::new().with_vsync(true);
     let display = glium::Display::new(window, context, &events_loop).unwrap();
+    let mut event_state = EventState::new(&display);
 
     let ascii_text = AsciiText::new(&display);
 
