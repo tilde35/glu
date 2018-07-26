@@ -86,7 +86,42 @@ Cargo Dependency: `cgmath = "0.16.1"`
 
 ### Usage ###
 
-(Placeholder for view matrix usage)
+2D Orthographic Matrix
+
+```rust
+let view_matrix: cgmath::Matrix4<f32> =
+    cgmath::ortho(left, right, bottom, top, near far);
+```
+
+3D Perspective Matrix
+
+```rust
+// Location the camera is pointing towards
+let view_center: cgmath::Point3<f32> = ...;
+
+// Location of the camera itself
+let camera_x: f32 = ...;
+let camera_y: f32 = ...;
+let camera_z: f32 = ...;
+
+let screen_ratio = (win_size.0 as f32) / (win_size.1 as f32);
+let perspective_matrix: cgmath::Matrix4<f32> = cgmath::perspective(cgmath::Deg(45.0), screen_ratio, 1.0, 1025.0);
+let view_eye: cgmath::Point3<f32> = cgmath::Point3::new(camera_x, camera_y, camera_z);
+let view_up: cgmath::Vector3<f32> = cgmath::Vector3::new(0.0, 1.0, 0.0);
+let view_matrix: cgmath::Matrix4<f32> = cgmath::Matrix4::look_at(view_eye, view_center, view_up);
+
+// Model matrix and model-view-perspective
+let model_matrix: cgmath::Matrix4<f32> = cgmath::Matrix4::identity();
+let mvp = perspective_matrix * view_matrix * model_matrix;
+```
+
+Usage in Uniforms
+
+```rust
+let uniforms = uniform! {
+    matrix: Into::<[[f32; 4]; 4]>::into(view_matrix),
+};
+```
 
 
 # Quick Setup Guides #
@@ -154,9 +189,45 @@ pub struct VertexData {
 implement_vertex!(VertexData, pos, txcoord);
 ```
 
-Texture Loading
+Load a Standard Texture (sRGB)
 
-(Texture loading placeholder)
+```rust
+let image_tx = {
+    let img_rgba: &[u8] = ...;
+    let img_width: u32 = ...;
+    let img_height: u32 = ...;
+
+    let raw = glium::texture::RawImage2d {
+        data: std::borrow::Cow::Borrowed(img_rgba),
+        width: img_width,
+        height: img_height,
+        format: glium::texture::ClientFormat::U8U8U8U8,
+    };
+
+    glium::texture::SrgbTexture2d::new(&display, raw).unwrap()
+};
+```
+
+Load a Texture Array (from sRGB images)
+
+```rust
+let image_tx_array = {
+    let images = ...;
+
+    let mut raw_entries = Vec::new();
+    for i in images.iter() {
+        let raw = glium::texture::RawImage2d {
+            data: std::borrow::Cow::Borrowed(i.rgba_data()),
+            width: i.width(),
+            height: i.height(),
+            format: glium::texture::ClientFormat::U8U8U8U8,
+        };
+        raw_entries.push(raw);
+    }
+
+    glium::texture::SrgbTexture2dArray::new(&display, raw_entries).unwrap()
+};
+```
 
 Vertex/Index Buffers
 
@@ -181,7 +252,11 @@ while v_idx < len {
     v_idx += 4;
 }
 
-let quad_index_buffer = glium::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &index_data).unwrap();
+let quad_index_buffer = glium::IndexBuffer::new(
+    &display,
+    glium::index::PrimitiveType::TrianglesList,
+    &index_data
+    ).unwrap();
 ```
 
 Rendering
@@ -193,13 +268,16 @@ draw_params.depth = glium::Depth {
     write: true,
     ..Default::default()
 };
+draw_params.blend = glium::Blend::alpha_blending();
 draw_params.backface_culling = glium::BackfaceCullingMode::CullCounterClockwise;
+
 let uniforms = uniform! {
     matrix: Into::<[[f32; 4]; 4]>::into(view_matrix),
     image_tx: glium::uniforms::Sampler::new(&image_tx)
         .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
         .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest),
 };
+
 target
     .draw(&vertex_buffer, &index_buffer, &example_program, &uniforms, &draw_params)
     .unwrap();
