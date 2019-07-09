@@ -3,7 +3,7 @@ name = "glu"
 version = "0.1.0"
 
 [dependencies]
-glium = { git = "https://github.com/tilde35/glium", branch = "glutin_0.16" }
+glium = "0.25.1"
 
 [dev-dependencies]
 fps_counter = "1.0.0"

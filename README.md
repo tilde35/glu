@@ -4,6 +4,8 @@ The glu project is a set of small, simple OpenGL utilities for use in my persona
 
 Cargo Dependency: `glu = { git = "https://github.com/tilde35/glu" }`
 
+Legacy Cargo Dependency (with personal glutin_0.16 branch): `glu = { git = "https://github.com/tilde35/glu", branch = "glutin_0.16" }`
+
 Legacy Cargo Dependency (with tuple coordinates): `glu = { git = "https://github.com/tilde35/glu", branch = "tuple-coords" }`
 
 For a more complete setup, refer to the  [example project](examples/fps_time_step.rs).

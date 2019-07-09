@@ -3,7 +3,7 @@ use glium::glutin as gl;
 
 /// Persistant state associated with the events. This keeps track of things like which control keys
 /// are currently pressed, location of the mouse, and the state of the mouse buttons.
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct EventState {
     pub mouse_pos: [i32; 2],
     pub mouse_activity_start: [i32; 2],
@@ -15,9 +15,12 @@ pub struct EventState {
     pub alt_down: bool,
     pub ctrl_down: bool,
     pub logo_down: bool,
+    pub hidpi_factor: f32,
 }
 impl EventState {
-    pub fn new() -> Self {
+    pub fn new(display: &glium::Display) -> Self {
+        let hidpi_factor = display.gl_window().window().get_hidpi_factor() as f32;
+
         Self {
             mouse_pos: [0, 0],
             mouse_activity_start: [0, 0],
@@ -38,6 +41,7 @@ impl EventState {
             alt_down: false,
             ctrl_down: false,
             logo_down: false,
+            hidpi_factor,
         }
     }
 
@@ -67,6 +71,27 @@ impl EventState {
         } else {
             None
         }
+    }
+    /// Distance from the last mouse click (left button).
+    pub fn mouse_left_dist(&self) -> [i32; 2] {
+        [
+            self.mouse_pos[0] - self.mouse_left.pressed_at[0],
+            self.mouse_pos[1] - self.mouse_left.pressed_at[1],
+        ]
+    }
+    /// Distance from the last mouse click (middle button).
+    pub fn mouse_middle_dist(&self) -> [i32; 2] {
+        [
+            self.mouse_pos[0] - self.mouse_middle.pressed_at[0],
+            self.mouse_pos[1] - self.mouse_middle.pressed_at[1],
+        ]
+    }
+    /// Distance from the last mouse click (right button).
+    pub fn mouse_right_dist(&self) -> [i32; 2] {
+        [
+            self.mouse_pos[0] - self.mouse_right.pressed_at[0],
+            self.mouse_pos[1] - self.mouse_right.pressed_at[1],
+        ]
     }
 }
 
