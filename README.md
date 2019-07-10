@@ -26,11 +26,11 @@ use glu::AsciiText;
 let ascii_text = AsciiText::new(&display);
 
 // Render text (text, scale, location, color)
-ascii_text.draw(&display, &mut target, "Example Text", 2.0, [15.0, 15.0], [0.8, 0.9, 0.8, 1.0]);
+ascii_text.draw(&display, &mut target, b"Example Text", 2.0, [15.0, 15.0], [0.8, 0.9, 0.8, 1.0]);
 
 // Render white/black text (text, scale, location)
-ascii_text.draw_white(&display, &mut target, "Example Text", 2.0, [15.0, 15.0]);
-ascii_text.draw_black(&display, &mut target, "Example Text", 2.0, [15.0, 15.0]);
+ascii_text.draw_white(&display, &mut target, b"Example Text", 2.0, [15.0, 15.0]);
+ascii_text.draw_black(&display, &mut target, b"Example Text", 2.0, [15.0, 15.0]);
 ```
 
 ## Events and Event State ##
@@ -41,13 +41,13 @@ For more information, refer to the [event quick-reference guide](Events.md).
 use glu::{Event, EventState};
 
 // Intialization
-let mut event_state = EventState::new();
+let mut event_state = EventState::new(&display);
 
 // Event loop
 events_loop.poll_events(|event| {
     let e = Event::from_gl(&event, &mut event_state);
     match e {
-        Event::WindowClose(..) => exit = true,
+        Event::WindowClose { .. } => exit = true,
         _ => {}
     }
 });
@@ -86,7 +86,7 @@ loop {
 
 ## cgmath ##
 
-Cargo Dependency: `cgmath = "0.16.1"`
+Cargo Dependency: `cgmath = "0.17.0"`
 
 ### Usage ###
 
