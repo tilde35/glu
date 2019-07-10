@@ -59,7 +59,9 @@ fn main() {
         msg.push(b' ');
         msg.push(15);
 
-        ascii_text.draw_white(&display, &mut target, &msg, 2.0, [10.0, 10.0]);
+        let size = event_state.primary_win_dim().unwrap().logical();
+
+        ascii_text.draw_white(&display, &mut target, &msg, 2.0, [10.0, size[1] - 16.0 - 2.0]);
 
         target.finish().unwrap();
     }

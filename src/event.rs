@@ -222,15 +222,25 @@ impl Event {
     ) -> Event {
         match *evt {
             gl::WindowEvent::Resized(logical_size) => {
-                let size = Screen2d::from_logical_size(logical_size, evt_state.hidpi_factor);
+                let size = {
+                    let w = evt_state.get_or_create_win(win_id);
+                    let f = w.hidpi_factor;
+                    let size = Screen2d::from_logical_size(logical_size, f);
+                    w.dim = size;
+                    size
+                };
                 Event::WindowResize { win_id, size }
             }
             gl::WindowEvent::Moved(logical_pos) => {
-                let pos = Screen2d::from_logical_position(logical_pos, evt_state.hidpi_factor);
+                let f = evt_state.get_or_create_win(win_id).hidpi_factor;
+                let pos = Screen2d::from_logical_position(logical_pos, f);
                 Event::WindowMove { win_id, pos }
             }
             gl::WindowEvent::CloseRequested => Event::WindowClose { win_id },
-            gl::WindowEvent::Destroyed => Event::WindowDestroyed { win_id },
+            gl::WindowEvent::Destroyed => {
+                evt_state.window_destroyed(win_id);
+                Event::WindowDestroyed { win_id }
+            }
             gl::WindowEvent::Refresh => Event::WindowRefresh { win_id },
             gl::WindowEvent::Focused(true) => Event::WindowFocus { win_id },
             gl::WindowEvent::Focused(false) => Event::WindowBlur { win_id },
@@ -299,7 +309,8 @@ impl Event {
                 position,
                 modifiers: _,
             } => {
-                let pos = Screen2d::from_logical_position(position, evt_state.hidpi_factor);
+                let f = evt_state.get_or_create_win(win_id).hidpi_factor;
+                let pos = Screen2d::from_logical_position(position, f);
                 evt_state.mouse_pos = pos;
                 if !evt_state.is_any_mouse_button_pressed() {
                     evt_state.mouse_activity_start = pos;
@@ -325,11 +336,12 @@ impl Event {
                 modifiers: _,
             } => match delta {
                 gl::MouseScrollDelta::LineDelta(dx, dy) => {
+                    let f = evt_state.get_or_create_win(win_id).hidpi_factor;
                     let delta = Screen2d::from_line_delta(
                         r32(dx),
                         r32(dy),
                         evt_state.logical_line_height,
-                        evt_state.hidpi_factor,
+                        f,
                     );
                     Event::MouseWheel {
                         win_id,
@@ -340,8 +352,8 @@ impl Event {
                     }
                 }
                 gl::MouseScrollDelta::PixelDelta(logical_pos) => {
-                    let delta =
-                        Screen2d::from_logical_position(logical_pos, evt_state.hidpi_factor);
+                    let f = evt_state.get_or_create_win(win_id).hidpi_factor;
+                    let delta = Screen2d::from_logical_position(logical_pos, f);
                     Event::MouseWheel {
                         win_id,
                         device_id,
@@ -404,7 +416,8 @@ impl Event {
                 stage,
             },
             gl::WindowEvent::Touch(ref t) => {
-                let s = Screen2d::from_logical_position(t.location, evt_state.hidpi_factor);
+                let f = evt_state.get_or_create_win(win_id).hidpi_factor;
+                let s = Screen2d::from_logical_position(t.location, f);
                 Event::Touch {
                     win_id,
                     device_id: t.device_id,
@@ -415,7 +428,7 @@ impl Event {
             }
             gl::WindowEvent::HiDpiFactorChanged(factor) => {
                 let factor = factor as f32;
-                evt_state.hidpi_factor = noisy_float::types::R32::new(factor);
+                evt_state.get_or_create_win(win_id).hidpi_factor = r32(factor);
                 Event::HiDpiFactorChanged { win_id, factor }
             }
         }
@@ -435,12 +448,9 @@ impl Event {
             },
             gl::DeviceEvent::MouseWheel { delta } => match delta {
                 gl::MouseScrollDelta::LineDelta(dx, dy) => {
-                    let delta = Screen2d::from_line_delta(
-                        r32(dx),
-                        r32(dy),
-                        state.logical_line_height,
-                        state.hidpi_factor,
-                    );
+                    let f = state.hidpi_factor_r32();
+                    let delta =
+                        Screen2d::from_line_delta(r32(dx), r32(dy), state.logical_line_height, f);
                     Event::AnywhereMouseWheel {
                         device_id,
                         delta,
@@ -448,7 +458,8 @@ impl Event {
                     }
                 }
                 gl::MouseScrollDelta::PixelDelta(logical_pos) => {
-                    let delta = Screen2d::from_logical_position(logical_pos, state.hidpi_factor);
+                    let f = state.hidpi_factor_r32();
+                    let delta = Screen2d::from_logical_position(logical_pos, f);
                     Event::AnywhereMouseWheel {
                         device_id,
                         delta,
