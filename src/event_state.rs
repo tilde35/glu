@@ -53,8 +53,12 @@ impl EventState {
         }
     }
 
-    pub fn primary_win_dim(&self) -> Option<Screen2d> {
-        self.windows.iter().nth(0).map(|w| w.dim)
+    pub fn primary_win_dim(&self) -> Screen2d {
+        self.windows
+            .iter()
+            .nth(0)
+            .map(|w| w.dim)
+            .unwrap_or(Screen2d::from_logical([0.0, 0.0], 1.0))
     }
 
     pub fn hidpi_factor(&self) -> f32 {
