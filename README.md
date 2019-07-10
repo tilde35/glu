@@ -112,6 +112,11 @@ let view_matrix: cgmath::Matrix4<f32> =
 3D Perspective Matrix
 
 ```rust
+let (win_width, win_height) = {
+    use glium::backend::Facade;
+    display.get_context().get_framebuffer_dimensions()
+};
+
 // Location the camera is pointing towards
 let view_center: cgmath::Point3<f32> = ...;
 
@@ -120,7 +125,7 @@ let camera_x: f32 = ...;
 let camera_y: f32 = ...;
 let camera_z: f32 = ...;
 
-let screen_ratio = (win_size.0 as f32) / (win_size.1 as f32);
+let screen_ratio = (win_width as f32) / (win_height as f32);
 let perspective_matrix: cgmath::Matrix4<f32> = cgmath::perspective(cgmath::Deg(45.0), screen_ratio, 1.0, 1025.0);
 let view_eye: cgmath::Point3<f32> = cgmath::Point3::new(camera_x, camera_y, camera_z);
 let view_up: cgmath::Vector3<f32> = cgmath::Vector3::new(0.0, 1.0, 0.0);
