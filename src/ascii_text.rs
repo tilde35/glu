@@ -1,4 +1,4 @@
-use ascii_text_img::ascii_raw_img;
+use crate::ascii_text_img::ascii_raw_img;
 use glium;
 use glium::backend::Facade;
 
@@ -40,7 +40,8 @@ impl AsciiText {
             &program_src.replace("TEMPLATE_PROGRAM", "VERTEX_PROGRAM"),
             &program_src.replace("TEMPLATE_PROGRAM", "FRAGMENT_PROGRAM"),
             None,
-        ).expect("Failed to compile ASCII shader: ascii_text.glsl");
+        )
+        .expect("Failed to compile ASCII shader: ascii_text.glsl");
 
         Self {
             ascii_texture: glium::texture::Texture2d::new(display, raw)
@@ -54,7 +55,7 @@ impl AsciiText {
         &self,
         display: &glium::Display,
         target: &mut DrawSurface,
-        txt: &str,
+        txt: &[u8],
         scale: f32,
         pos: [f32; 2],
     ) {
@@ -65,7 +66,7 @@ impl AsciiText {
         &self,
         display: &glium::Display,
         target: &mut DrawSurface,
-        txt: &str,
+        txt: &[u8],
         scale: f32,
         pos: [f32; 2],
     ) {
@@ -73,6 +74,7 @@ impl AsciiText {
     }
 
     /// Draws the specified text to the screen.
+    /// The scale and position should be specified in logical units (not physical pixels).
     ///
     /// The scale determines the size of the text (where 1.0 is 8 pixels high). The position is the
     /// location on the window from the upper-left corner. The color is in RGBA format (alpha
@@ -81,12 +83,17 @@ impl AsciiText {
         &self,
         display: &glium::Display,
         target: &mut DrawSurface,
-        txt: &str,
+        txt: &[u8],
         scale: f32,
         pos: [f32; 2],
         color: [f32; 4],
     ) {
         let win_size = display.get_context().get_framebuffer_dimensions();
+
+        // Adjust for DPI factor
+        let hidpi_factor = display.gl_window().window().get_hidpi_factor() as f32;
+        let scale = scale * hidpi_factor;
+        let pos = [pos[0] * hidpi_factor, pos[1] * hidpi_factor];
 
         let transform = {
             // Scale and translate values
@@ -121,7 +128,7 @@ impl AsciiText {
         let next_char = scale * 9.0;
         let mut x = pos[0];
         let mut y = pos[1];
-        for glyph in txt.as_bytes() {
+        for glyph in txt {
             if *glyph == b'\n' {
                 // Newline
                 x = pos[0];
@@ -145,7 +152,8 @@ impl AsciiText {
             display,
             glium::index::PrimitiveType::TrianglesList,
             &index_data,
-        ).expect("Failed to create ASCII index buffer");
+        )
+        .expect("Failed to create ASCII index buffer");
 
         target
             .draw(

@@ -32,18 +32,34 @@ fn main() {
 
         events_loop.poll_events(|event| {
             let e = Event::from_gl(&event, &mut event_state);
+
             match e {
-                Event::WindowClose(..) => exit = true,
-                Event::KeyDown(_, _, _, Some(VirtualKeyCode::X)) => exit = true,
-                _ => {}
+                Event::WindowClose { .. } => exit = true,
+                Event::KeyDown {
+                    vkey: Some(VirtualKeyCode::Escape),
+                    ..
+                } => exit = true,
+                // Hide noisy events
+                Event::MouseMove { .. }
+                | Event::MouseMotion { .. }
+                | Event::DeviceMotion { .. } => {}
+                // Display all other events
+                _ => {
+                    println!("{:?}", &e);
+                }
             }
         });
 
         let mut target = display.draw();
         target.clear_color_and_depth((0.01, 0.0, 0.1, 1.0), 1.0);
 
-        let f = event_state.hidpi_factor;
-        ascii_text.draw_white(&display, &mut target, &s, 1.5 * f, [10.0 * f, 10.0 * f]);
+        let mut msg = s.as_bytes().to_owned();
+        msg.insert(0, b' ');
+        msg.insert(0, 15);
+        msg.push(b' ');
+        msg.push(15);
+
+        ascii_text.draw_white(&display, &mut target, &msg, 2.0, [10.0, 10.0]);
 
         target.finish().unwrap();
     }

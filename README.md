@@ -10,6 +10,8 @@ Legacy Cargo Dependency (with tuple coordinates): `glu = { git = "https://github
 
 For a more complete setup, refer to the  [example project](examples/fps_time_step.rs).
 
+For detailed event information, refer to the [event quick-reference guide](Events.md).
+
 ### Utility List ###
 * ASCII Text
 * Events and Event State

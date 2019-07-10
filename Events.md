@@ -1,57 +1,56 @@
 # Event Quick-Reference #
 
-Both the original events and the virtual key codes were derived from the [winit events file](https://github.com/tomaka/winit/blob/master/src/events.rs).
+Both the original events and the virtual key codes were derived from the [winit events file](https://github.com/rust-windowing/winit/blob/master/src/event.rs).
 
 ## Complete Match Statement ##
 
 ```rust
 match e {
-  glu::Event::AppAwaken => {},
-  glu::Event::AppResume => {},
-  glu::Event::AppSuspend => {},
+    glu::Event::AppAwaken => {}
+    glu::Event::AppResume => {}
+    glu::Event::AppSuspend => {}
 
-  glu::Event::WindowResize(window_id, width, height) => {},
-  glu::Event::WindowMove(window_id, x, y) => {},
-  glu::Event::WindowClose(window_id) => {},
-  glu::Event::WindowRefresh(window_id) => {},
-  glu::Event::WindowFocus(window_id) => {},
-  glu::Event::WindowBlur(window_id) => {},
+    glu::Event::WindowResize { win_id, size } => {}
+    glu::Event::WindowMove { win_id, pos } => {}
+    glu::Event::WindowClose { win_id } => {}
+    glu::Event::WindowDestroyed { win_id } => {}
+    glu::Event::WindowRefresh { win_id } => {}
+    glu::Event::WindowFocus { win_id } => {}
+    glu::Event::WindowBlur { win_id } => {}
 
-  glu::Event::FileDrop(window_id, path) => {},
-  glu::Event::FileHover(window_id, path) => {},
-  glu::Event::FileCancel(window_id) => {},
+    glu::Event::FileDrop { win_id, path } => {}
+    glu::Event::FileHover { win_id, path } => {}
+    glu::Event::FileCancel { win_id } => {}
 
-  glu::Event::MouseMotion(device_id, dx, dy) => {},
-  glu::Event::AnyMouseWheelByLine(device_id, dx, dy) => {},
-  glu::Event::AnyMouseWheelByPixel(device_id, dx, dy) => {},
+    glu::Event::MouseMotion { device_id, delta } => {}
+    glu::Event::AnywhereMouseWheel { device_id, delta, delta_line } => {} // Note: Prefer MouseWheel instead
 
-  glu::Event::MouseMove(window_id, device_id, x, y) => {},
-  glu::Event::MouseDown(window_id, device_id, mouse_button) => {},
-  glu::Event::MouseUp(window_id, device_id, mouse_button) => {},
-  glu::Event::MouseWheelByLine(window_id, device_id, dx, dy, touch_phase) => {},
-  glu::Event::MouseWheelByPixel(window_id, device_id, dx, dy, touch_phase) => {},
-  glu::Event::MouseWindowEnter(window_id, device_id) => {},
-  glu::Event::MouseWindowLeave(window_id, device_id) => {},
+    glu::Event::MouseMove { win_id, device_id, pos } => {}
+    glu::Event::MouseDown { win_id, device_id, button } => {}
+    glu::Event::MouseUp { win_id, device_id, button } => {}
+    glu::Event::MouseWheel { win_id, device_id, delta, delta_line, phase } => {}
+    glu::Event::MouseWindowEnter { win_id, device_id } => {}
+    glu::Event::MouseWindowLeave { win_id, device_id } => {}
 
-  glu::Event::TouchpadPressure(window_id, device_id, pressure, stage) => {},
-  glu::Event::Touch(window_id, device_id, finger_id, x, y, touch_phase) => {},
+    glu::Event::TouchpadPressure { win_id, device_id, pressure, stage } => {}
+    glu::Event::Touch { win_id, device_id, finger, pos, phase } => {}
 
-  glu::Event::AxisMotion(window_id, device_id, axis_id, delta) => {},
+    glu::Event::AxisMotion { win_id, device_id, axis, delta } => {}
 
-  glu::Event::KeyDown(window_id, device_id, scan_code, virtual_key_code) => {},
-  glu::Event::KeyUp(window_id, device_id, scan_code, virtual_key_code) => {},
-  glu::Event::KeyText(window_id, event_char, valid_char) => {},
+    glu::Event::KeyDown { win_id, device_id, code, vkey } => {}
+    glu::Event::KeyUp { win_id, device_id, code, vkey } => {}
+    glu::Event::KeyText { win_id, codepoint, ch } => {}
 
-  glu::Event::DeviceAdded(device_id) => {},
-  glu::Event::DeviceRemoved(device_id) => {},
-  glu::Event::DeviceMotion(device_id, axis_id, delta) => {},
-  glu::Event::DeviceButtonDown(device_id, button_id) => {},
-  glu::Event::DeviceButtonUp(device_id, button_id) => {},
-  glu::Event::DeviceKeyDown(device_id, scan_code, virtual_key_code) => {},
-  glu::Event::DeviceKeyUp(device_id, scan_code, virtual_key_code) => {},
-  glu::Event::DeviceText(device_id, event_char, valid_char) => {},
+    glu::Event::DeviceAdded { device_id } => {}
+    glu::Event::DeviceRemoved { device_id } => {}
+    glu::Event::DeviceMotion { device_id, axis, delta } => {}
+    glu::Event::DeviceButtonDown { device_id, button } => {}
+    glu::Event::DeviceButtonUp { device_id, button } => {}
+    glu::Event::DeviceKeyDown { device_id, code, vkey } => {}
+    glu::Event::DeviceKeyUp { device_id, code, vkey } => {}
+    glu::Event::DeviceText { device_id, codepoint, ch } => {}
 
-  glu::Event::HiDPIFactorChanged(factor) => {},
+    glu::Event::HiDpiFactorChanged { win_id, factor } => {}
 }
 ```
 

@@ -1,13 +1,11 @@
 // Event Definitions:
-// Version 0.7.6
-//   https://github.com/tomaka/winit/blob/be9d4e7e03c9b37d50868c129199564b4efb7517/src/events.rs
-// Current
-//   https://github.com/tomaka/winit/blob/master/src/events.rs
+//   https://github.com/rust-windowing/winit/blob/master/src/event.rs
 
-use event_state::{EventState, MouseButtonState};
+use crate::event_state::{EventState, MouseButtonState};
+use crate::screen_units::Screen2d;
 use glium::glutin as gl;
-// Note: these are re-exported by lib.rs as well
-pub use glium::glutin::{DeviceId, VirtualKeyCode, WindowId};
+use glium::glutin::{DeviceId, VirtualKeyCode, WindowId};
+use noisy_float::prelude::*;
 use std::path::PathBuf;
 
 pub type AxisId = u32;
@@ -22,61 +20,178 @@ pub enum Event {
     AppResume,
     AppSuspend,
 
-    WindowResize(WindowId, u32, u32),
-    WindowMove(WindowId, i32, i32),
-    WindowClose(WindowId),
-    WindowDestroyed(WindowId),
-    WindowRefresh(WindowId),
-    WindowFocus(WindowId),
-    WindowBlur(WindowId),
+    WindowResize {
+        win_id: WindowId,
+        size: Screen2d,
+    },
+    WindowMove {
+        win_id: WindowId,
+        pos: Screen2d,
+    },
+    WindowClose {
+        win_id: WindowId,
+    },
+    WindowDestroyed {
+        win_id: WindowId,
+    },
+    WindowRefresh {
+        win_id: WindowId,
+    },
+    WindowFocus {
+        win_id: WindowId,
+    },
+    WindowBlur {
+        win_id: WindowId,
+    },
 
-    FileDrop(WindowId, PathBuf),
-    FileHover(WindowId, PathBuf),
-    FileCancel(WindowId),
+    FileDrop {
+        win_id: WindowId,
+        path: PathBuf,
+    },
+    FileHover {
+        win_id: WindowId,
+        path: PathBuf,
+    },
+    FileCancel {
+        win_id: WindowId,
+    },
 
-    MouseMotion(DeviceId, f64, f64),
-    AnyMouseWheelByLine(DeviceId, f32, f32),
-    AnyMouseWheelByPixel(DeviceId, f32, f32),
+    /// Represents the unfiltered movement coming from the mouse. This data does not correspond to
+    /// screen units (although it may match somewhat with physical screen coordinates). Comparing a
+    /// sum-total of mouse motion against screen position will typically be different due to mouse
+    /// acceleration, O/S settings, and other factors.
+    MouseMotion {
+        device_id: DeviceId,
+        delta: [f32; 2],
+    },
+    /// This event is triggered when a mouse wheel is scrolled, even if the mouse is over a different window.
+    /// However, there are some drawbacks. Some devices (ex. some touchpads) may not trigger this callback
+    /// and will only trigger the MouseWheel callback.
+    AnywhereMouseWheel {
+        device_id: DeviceId,
+        delta: Screen2d,
+        delta_line: Option<[f32; 2]>,
+    },
 
-    MouseMove(WindowId, DeviceId, i32, i32),
-    MouseDown(WindowId, DeviceId, MouseButton),
-    MouseUp(WindowId, DeviceId, MouseButton),
-    MouseWheelByLine(WindowId, DeviceId, f32, f32, TouchPhase),
-    MouseWheelByPixel(WindowId, DeviceId, f32, f32, TouchPhase),
-    MouseWindowEnter(WindowId, DeviceId),
-    MouseWindowLeave(WindowId, DeviceId),
+    MouseMove {
+        win_id: WindowId,
+        device_id: DeviceId,
+        pos: Screen2d,
+    },
+    MouseDown {
+        win_id: WindowId,
+        device_id: DeviceId,
+        button: MouseButton,
+    },
+    MouseUp {
+        win_id: WindowId,
+        device_id: DeviceId,
+        button: MouseButton,
+    },
+    MouseWheel {
+        win_id: WindowId,
+        device_id: DeviceId,
+        delta: Screen2d,
+        delta_line: Option<[f32; 2]>,
+        phase: TouchPhase,
+    },
+    MouseWindowEnter {
+        win_id: WindowId,
+        device_id: DeviceId,
+    },
+    MouseWindowLeave {
+        win_id: WindowId,
+        device_id: DeviceId,
+    },
 
-    // WindowId, DeviceId, Pressure(f32), Stage(i64)
-    TouchpadPressure(WindowId, DeviceId, f32, i64),
-    Touch(WindowId, DeviceId, FingerId, f64, f64, TouchPhase),
+    TouchpadPressure {
+        win_id: WindowId,
+        device_id: DeviceId,
+        pressure: f32,
+        stage: i64,
+    },
+    Touch {
+        win_id: WindowId,
+        device_id: DeviceId,
+        finger: FingerId,
+        pos: Screen2d,
+        phase: TouchPhase,
+    },
 
-    AxisMotion(WindowId, DeviceId, AxisId, f64),
+    AxisMotion {
+        win_id: WindowId,
+        device_id: DeviceId,
+        axis: AxisId,
+        delta: f32,
+    },
 
-    KeyDown(WindowId, DeviceId, ScanCode, Option<VirtualKeyCode>),
-    KeyUp(WindowId, DeviceId, ScanCode, Option<VirtualKeyCode>),
-    KeyText(WindowId, char, Option<char>),
+    KeyDown {
+        win_id: WindowId,
+        device_id: DeviceId,
+        code: ScanCode,
+        vkey: Option<VirtualKeyCode>,
+    },
+    KeyUp {
+        win_id: WindowId,
+        device_id: DeviceId,
+        code: ScanCode,
+        vkey: Option<VirtualKeyCode>,
+    },
+    KeyText {
+        win_id: WindowId,
+        codepoint: char,
+        ch: Option<char>,
+    },
 
-    DeviceAdded(DeviceId),
-    DeviceRemoved(DeviceId),
-    DeviceMotion(DeviceId, AxisId, f64),
-    DeviceButtonDown(DeviceId, ButtonId),
-    DeviceButtonUp(DeviceId, ButtonId),
-    DeviceKeyDown(DeviceId, ScanCode, Option<VirtualKeyCode>),
-    DeviceKeyUp(DeviceId, ScanCode, Option<VirtualKeyCode>),
-    DeviceText(DeviceId, char, Option<char>),
+    DeviceAdded {
+        device_id: DeviceId,
+    },
+    DeviceRemoved {
+        device_id: DeviceId,
+    },
+    DeviceMotion {
+        device_id: DeviceId,
+        axis: AxisId,
+        delta: f32,
+    },
+    DeviceButtonDown {
+        device_id: DeviceId,
+        button: ButtonId,
+    },
+    DeviceButtonUp {
+        device_id: DeviceId,
+        button: ButtonId,
+    },
+    DeviceKeyDown {
+        device_id: DeviceId,
+        code: ScanCode,
+        vkey: Option<VirtualKeyCode>,
+    },
+    DeviceKeyUp {
+        device_id: DeviceId,
+        code: ScanCode,
+        vkey: Option<VirtualKeyCode>,
+    },
+    DeviceText {
+        device_id: DeviceId,
+        codepoint: char,
+        ch: Option<char>,
+    },
 
-    HiDPIFactorChanged(f32),
+    HiDpiFactorChanged {
+        win_id: WindowId,
+        factor: f32,
+    },
 }
 impl Event {
     pub fn is_mouse_event(&self) -> bool {
         match *self {
-            Event::MouseMove(..)
-            | Event::MouseDown(..)
-            | Event::MouseUp(..)
-            | Event::MouseWheelByLine(..)
-            | Event::MouseWheelByPixel(..)
-            | Event::MouseWindowEnter(..)
-            | Event::MouseWindowLeave(..) => true,
+            Event::MouseMove { .. }
+            | Event::MouseDown { .. }
+            | Event::MouseUp { .. }
+            | Event::MouseWheel { .. }
+            | Event::MouseWindowEnter { .. }
+            | Event::MouseWindowLeave { .. } => true,
             _ => false,
         }
     }
@@ -100,31 +215,49 @@ impl Event {
         }
     }
 
-    fn from_window_event(id: WindowId, evt: &gl::WindowEvent, evt_state: &mut EventState) -> Event {
+    fn from_window_event(
+        win_id: WindowId,
+        evt: &gl::WindowEvent,
+        evt_state: &mut EventState,
+    ) -> Event {
         match *evt {
             gl::WindowEvent::Resized(logical_size) => {
-                let s = logical_size.to_physical(evt_state.hidpi_factor as f64);
-                Event::WindowResize(id, s.width as u32, s.height as u32)
+                let size = Screen2d::from_logical_size(logical_size, evt_state.hidpi_factor);
+                Event::WindowResize { win_id, size }
             }
             gl::WindowEvent::Moved(logical_pos) => {
-                let pos = logical_pos.to_physical(evt_state.hidpi_factor as f64);
-                Event::WindowMove(id, pos.x as i32, pos.y as i32)
+                let pos = Screen2d::from_logical_position(logical_pos, evt_state.hidpi_factor);
+                Event::WindowMove { win_id, pos }
             }
-            gl::WindowEvent::CloseRequested => Event::WindowClose(id),
-            gl::WindowEvent::Destroyed => Event::WindowDestroyed(id),
-            gl::WindowEvent::Refresh => Event::WindowRefresh(id),
-            gl::WindowEvent::Focused(true) => Event::WindowFocus(id),
-            gl::WindowEvent::Focused(false) => Event::WindowBlur(id),
+            gl::WindowEvent::CloseRequested => Event::WindowClose { win_id },
+            gl::WindowEvent::Destroyed => Event::WindowDestroyed { win_id },
+            gl::WindowEvent::Refresh => Event::WindowRefresh { win_id },
+            gl::WindowEvent::Focused(true) => Event::WindowFocus { win_id },
+            gl::WindowEvent::Focused(false) => Event::WindowBlur { win_id },
 
-            gl::WindowEvent::DroppedFile(ref path) => Event::FileDrop(id, path.clone()),
-            gl::WindowEvent::HoveredFile(ref path) => Event::FileHover(id, path.clone()),
-            gl::WindowEvent::HoveredFileCancelled => Event::FileCancel(id),
+            gl::WindowEvent::DroppedFile(ref path) => Event::FileDrop {
+                win_id,
+                path: path.clone(),
+            },
+            gl::WindowEvent::HoveredFile(ref path) => Event::FileHover {
+                win_id,
+                path: path.clone(),
+            },
+            gl::WindowEvent::HoveredFileCancelled => Event::FileCancel { win_id },
 
-            gl::WindowEvent::ReceivedCharacter(ch) => {
+            gl::WindowEvent::ReceivedCharacter(codepoint) => {
                 if evt_state.ctrl_down {
-                    Event::KeyText(id, ch, None)
+                    Event::KeyText {
+                        win_id,
+                        codepoint,
+                        ch: None,
+                    }
                 } else {
-                    Event::KeyText(id, ch, Self::text_char(ch))
+                    Event::KeyText {
+                        win_id,
+                        codepoint,
+                        ch: Self::text_char(codepoint),
+                    }
                 }
             }
             gl::WindowEvent::KeyboardInput { device_id, input } => {
@@ -146,12 +279,18 @@ impl Event {
                 }
 
                 match input.state {
-                    gl::ElementState::Pressed => {
-                        Event::KeyDown(id, device_id, input.scancode, input.virtual_keycode)
-                    }
-                    gl::ElementState::Released => {
-                        Event::KeyUp(id, device_id, input.scancode, input.virtual_keycode)
-                    }
+                    gl::ElementState::Pressed => Event::KeyDown {
+                        win_id,
+                        device_id,
+                        code: input.scancode,
+                        vkey: input.virtual_keycode,
+                    },
+                    gl::ElementState::Released => Event::KeyUp {
+                        win_id,
+                        device_id,
+                        code: input.scancode,
+                        vkey: input.virtual_keycode,
+                    },
                 }
             }
 
@@ -160,22 +299,24 @@ impl Event {
                 position,
                 modifiers: _,
             } => {
-                let p = position.to_physical(evt_state.hidpi_factor as f64);
-                let x = p.x as i32;
-                let y = p.y as i32;
-                evt_state.mouse_pos = [x, y];
+                let pos = Screen2d::from_logical_position(position, evt_state.hidpi_factor);
+                evt_state.mouse_pos = pos;
                 if !evt_state.is_any_mouse_button_pressed() {
-                    evt_state.mouse_activity_start = [x, y];
+                    evt_state.mouse_activity_start = pos;
                 }
-                Event::MouseMove(id, device_id, x, y)
+                Event::MouseMove {
+                    win_id,
+                    device_id,
+                    pos,
+                }
             }
             gl::WindowEvent::CursorEntered { device_id } => {
                 evt_state.mouse_in_window = true;
-                Event::MouseWindowEnter(id, device_id)
+                Event::MouseWindowEnter { win_id, device_id }
             }
             gl::WindowEvent::CursorLeft { device_id } => {
                 evt_state.mouse_in_window = false;
-                Event::MouseWindowLeave(id, device_id)
+                Event::MouseWindowLeave { win_id, device_id }
             }
             gl::WindowEvent::MouseWheel {
                 device_id,
@@ -184,18 +325,30 @@ impl Event {
                 modifiers: _,
             } => match delta {
                 gl::MouseScrollDelta::LineDelta(dx, dy) => {
-                    Event::MouseWheelByLine(id, device_id, dx, dy, TouchPhase::from_gl(phase))
+                    let delta = Screen2d::from_line_delta(
+                        r32(dx),
+                        r32(dy),
+                        evt_state.logical_line_height,
+                        evt_state.hidpi_factor,
+                    );
+                    Event::MouseWheel {
+                        win_id,
+                        device_id,
+                        delta,
+                        delta_line: Some([dx, dy]),
+                        phase: TouchPhase::from_gl(phase),
+                    }
                 }
                 gl::MouseScrollDelta::PixelDelta(logical_pos) => {
-                    // Having the scrolling adjusted based on DPI may not be ideal - include logical position as well?
-                    let pos = logical_pos.to_physical(evt_state.hidpi_factor as f64);
-                    Event::MouseWheelByPixel(
-                        id,
+                    let delta =
+                        Screen2d::from_logical_position(logical_pos, evt_state.hidpi_factor);
+                    Event::MouseWheel {
+                        win_id,
                         device_id,
-                        pos.x as f32,
-                        pos.y as f32,
-                        TouchPhase::from_gl(phase),
-                    )
+                        delta,
+                        delta_line: None,
+                        phase: TouchPhase::from_gl(phase),
+                    }
                 }
             },
             gl::WindowEvent::MouseInput {
@@ -211,13 +364,21 @@ impl Event {
                         d.pressed_at = pos;
                         d.cancelled = false;
                     }
-                    Event::MouseDown(id, device_id, MouseButton::from_gl(button))
+                    Event::MouseDown {
+                        win_id,
+                        device_id,
+                        button: MouseButton::from_gl(button),
+                    }
                 }
                 gl::ElementState::Released => {
                     if let Some(d) = Self::mouse_data_for(evt_state, button) {
                         d.pressed = false;
                     }
-                    Event::MouseUp(id, device_id, MouseButton::from_gl(button))
+                    Event::MouseUp {
+                        win_id,
+                        device_id,
+                        button: MouseButton::from_gl(button),
+                    }
                 }
             },
 
@@ -225,67 +386,109 @@ impl Event {
                 device_id,
                 axis,
                 value,
-            } => Event::AxisMotion(id, device_id, axis, value),
+            } => Event::AxisMotion {
+                win_id,
+                device_id,
+                axis,
+                delta: value as f32,
+            },
 
             gl::WindowEvent::TouchpadPressure {
                 device_id,
                 pressure,
                 stage,
-            } => Event::TouchpadPressure(id, device_id, pressure, stage),
+            } => Event::TouchpadPressure {
+                win_id,
+                device_id,
+                pressure,
+                stage,
+            },
             gl::WindowEvent::Touch(ref t) => {
-                let loc = t.location.to_physical(evt_state.hidpi_factor as f64);
-                Event::Touch(
-                    id,
-                    t.device_id,
-                    t.id,
-                    loc.x,
-                    loc.y,
-                    TouchPhase::from_gl(t.phase),
-                )
+                let s = Screen2d::from_logical_position(t.location, evt_state.hidpi_factor);
+                Event::Touch {
+                    win_id,
+                    device_id: t.device_id,
+                    finger: t.id,
+                    pos: s,
+                    phase: TouchPhase::from_gl(t.phase),
+                }
             }
             gl::WindowEvent::HiDpiFactorChanged(factor) => {
                 let factor = factor as f32;
-                evt_state.hidpi_factor = factor;
-                Event::HiDPIFactorChanged(factor)
+                evt_state.hidpi_factor = noisy_float::types::R32::new(factor);
+                Event::HiDpiFactorChanged { win_id, factor }
             }
         }
     }
 
-    fn from_device_event(id: DeviceId, evt: &gl::DeviceEvent, state: &mut EventState) -> Event {
+    fn from_device_event(
+        device_id: DeviceId,
+        evt: &gl::DeviceEvent,
+        state: &mut EventState,
+    ) -> Event {
         match *evt {
-            gl::DeviceEvent::Added => Event::DeviceAdded(id),
-            gl::DeviceEvent::Removed => Event::DeviceRemoved(id),
-            gl::DeviceEvent::MouseMotion { delta } => Event::MouseMotion(id, delta.0, delta.1),
+            gl::DeviceEvent::Added => Event::DeviceAdded { device_id },
+            gl::DeviceEvent::Removed => Event::DeviceRemoved { device_id },
+            gl::DeviceEvent::MouseMotion { delta } => Event::MouseMotion {
+                device_id,
+                delta: [delta.0 as f32, delta.1 as f32],
+            },
             gl::DeviceEvent::MouseWheel { delta } => match delta {
-                gl::MouseScrollDelta::LineDelta(dx, dy) => Event::AnyMouseWheelByLine(id, dx, dy),
+                gl::MouseScrollDelta::LineDelta(dx, dy) => {
+                    let delta = Screen2d::from_line_delta(
+                        r32(dx),
+                        r32(dy),
+                        state.logical_line_height,
+                        state.hidpi_factor,
+                    );
+                    Event::AnywhereMouseWheel {
+                        device_id,
+                        delta,
+                        delta_line: Some([dx, dy]),
+                    }
+                }
                 gl::MouseScrollDelta::PixelDelta(logical_pos) => {
-                    let pos = logical_pos.to_physical(state.hidpi_factor as f64);
-                    Event::AnyMouseWheelByPixel(id, pos.x as f32, pos.y as f32)
+                    let delta = Screen2d::from_logical_position(logical_pos, state.hidpi_factor);
+                    Event::AnywhereMouseWheel {
+                        device_id,
+                        delta,
+                        delta_line: None,
+                    }
                 }
             },
-            gl::DeviceEvent::Motion { axis, value } => Event::DeviceMotion(id, axis, value),
+            gl::DeviceEvent::Motion { axis, value } => Event::DeviceMotion {
+                device_id,
+                axis,
+                delta: value as f32,
+            },
             gl::DeviceEvent::Button {
                 button,
                 state: gl::ElementState::Pressed,
-            } => Event::DeviceButtonDown(id, button),
+            } => Event::DeviceButtonDown { device_id, button },
             gl::DeviceEvent::Button {
                 button,
                 state: gl::ElementState::Released,
-            } => Event::DeviceButtonUp(id, button),
+            } => Event::DeviceButtonUp { device_id, button },
             gl::DeviceEvent::Key(key_input) => {
                 Self::set_modifiers(state, &key_input.modifiers);
                 match key_input.state {
-                    gl::ElementState::Pressed => {
-                        Event::DeviceKeyDown(id, key_input.scancode, key_input.virtual_keycode)
-                    }
-                    gl::ElementState::Released => {
-                        Event::DeviceKeyUp(id, key_input.scancode, key_input.virtual_keycode)
-                    }
+                    gl::ElementState::Pressed => Event::DeviceKeyDown {
+                        device_id,
+                        code: key_input.scancode,
+                        vkey: key_input.virtual_keycode,
+                    },
+                    gl::ElementState::Released => Event::DeviceKeyUp {
+                        device_id,
+                        code: key_input.scancode,
+                        vkey: key_input.virtual_keycode,
+                    },
                 }
             }
-            gl::DeviceEvent::Text { codepoint } => {
-                Event::DeviceText(id, codepoint, Self::text_char(codepoint))
-            }
+            gl::DeviceEvent::Text { codepoint } => Event::DeviceText {
+                device_id,
+                codepoint,
+                ch: Self::text_char(codepoint),
+            },
         }
     }
 
