@@ -2,11 +2,23 @@
 
 The glu project is a set of small, simple OpenGL utilities for use in my personal projects.
 
-Cargo Dependency: `glu = { git = "https://github.com/tilde35/glu" }`
+Cargo Dependencies:
 
-Legacy Cargo Dependency (with personal glutin_0.16 branch): `glu = { git = "https://github.com/tilde35/glu", branch = "glutin_0.16" }`
+```
+[dependencies]
+glium = "0.25.1"
+glu = { git = "https://github.com/tilde35/glu" }
+fps_counter = "1.0.0"
+cgmath = "0.17.0"
+```
 
-Legacy Cargo Dependency (with tuple coordinates): `glu = { git = "https://github.com/tilde35/glu", branch = "tuple-coords" }`
+Legacy Cargo Dependency (with personal glutin_0.16 branch): 
+
+`glu = { git = "https://github.com/tilde35/glu", branch = "glutin_0.16" }`
+
+Legacy Cargo Dependency (with tuple coordinates): 
+
+`glu = { git = "https://github.com/tilde35/glu", branch = "tuple-coords" }`
 
 For a more complete setup, refer to the  [example project](examples/fps_time_step.rs).
 
