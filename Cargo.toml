@@ -8,4 +8,4 @@ glium = "0.29.1"
 noisy_float = "0.2.0"
 
 [dev-dependencies]
-fps_counter = "1.0.0"
+fps_counter = "2.0.0"

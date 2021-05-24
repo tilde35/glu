@@ -17,10 +17,15 @@ pub type FingerId = u64;
 /// An event from OpenGL. This is a simplified version of the events provided by winit.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Event {
+    Placeholder,
+
     AppAwaken,
     AppResume,
     AppSuspend,
-    Placeholder,
+    Redraw,
+
+    /// Shift/ctrl/alt changed
+    ModifiersChanged,
 
     WindowResize {
         win_id: WindowId,
@@ -213,12 +218,13 @@ impl Event {
             gle::Event::Suspended => Event::AppSuspend,
             gle::Event::Resumed => Event::AppResume,
 
+            gle::Event::RedrawRequested(_) => Event::Redraw,
+            gle::Event::RedrawEventsCleared => Event::Redraw,
+
             // New events (ignored for now)
-            gle::Event::NewEvents(_) => Event::Placeholder,
-            gle::Event::UserEvent(_) => Event::Placeholder,
+            gle::Event::NewEvents(_cause) => Event::Placeholder,
+            gle::Event::UserEvent(..) => Event::Placeholder,
             gle::Event::MainEventsCleared => Event::Placeholder,
-            gle::Event::RedrawRequested(_) => Event::Placeholder,
-            gle::Event::RedrawEventsCleared => Event::Placeholder,
             gle::Event::LoopDestroyed => Event::Placeholder,
         }
     }
@@ -284,7 +290,7 @@ impl Event {
                 is_synthetic,
             } => {
                 let _ = is_synthetic;
-                Self::set_modifiers(evt_state, &input.modifiers);
+                //Self::set_modifiers(evt_state, &input.modifiers);
 
                 match (input.state, input.virtual_keycode) {
                     (gle::ElementState::Pressed, Some(VirtualKeyCode::Escape)) => {
@@ -454,9 +460,10 @@ impl Event {
                 evt_state.get_or_create_win(win_id).hidpi_factor = r32(factor);
                 Event::HiDpiFactorChanged { win_id, factor }
             }
-            gle::WindowEvent::ModifiersChanged(_m) => {
+            gle::WindowEvent::ModifiersChanged(m) => {
+                Self::set_modifiers(evt_state, m);
                 // TODO! Assign modifiers in the future
-                Event::Placeholder
+                Event::ModifiersChanged
             }
             gle::WindowEvent::ThemeChanged(_t) => Event::Placeholder,
         }
@@ -509,7 +516,7 @@ impl Event {
                 state: gle::ElementState::Released,
             } => Event::DeviceButtonUp { device_id, button },
             gle::DeviceEvent::Key(key_input) => {
-                Self::set_modifiers(state, &key_input.modifiers);
+                //Self::set_modifiers(state, &key_input.modifiers);
                 match key_input.state {
                     gle::ElementState::Pressed => Event::DeviceKeyDown {
                         device_id,

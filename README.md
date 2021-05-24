@@ -6,10 +6,9 @@ Cargo Dependencies:
 
 ```
 [dependencies]
-glium = "0.25.1"
+glium = "0.29.1"
 glu = { git = "https://github.com/tilde35/glu" }
-fps_counter = "1.0.0"
-cgmath = "0.17.0"
+fps_counter = "2.0.0"
 ```
 
 Legacy Cargo Dependency (with personal glutin_0.16 branch): 
@@ -19,6 +18,10 @@ Legacy Cargo Dependency (with personal glutin_0.16 branch):
 Legacy Cargo Dependency (with tuple coordinates): 
 
 `glu = { git = "https://github.com/tilde35/glu", branch = "tuple-coords" }`
+
+Legacy Cargo Dependency (with glutin_0.25.1 branch): 
+
+`glu = { git = "https://github.com/tilde35/glu", branch = "glutin_0.25.1" }`
 
 For a more complete setup, refer to the  [example project](examples/fps_time_step.rs).
 
@@ -95,10 +98,6 @@ loop {
   // Process events and render page...
 }
 ```
-
-## cgmath ##
-
-Cargo Dependency: `cgmath = "0.17.0"`
 
 ### Usage ###
 
