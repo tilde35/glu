@@ -1,4 +1,4 @@
-use glium::glutin::dpi::{LogicalPosition, LogicalSize};
+use glium::glutin::dpi::{PhysicalPosition, PhysicalSize};
 use noisy_float::prelude::*;
 
 /// Represents a 2D screen position or size. There are two ways of accessing the
@@ -27,20 +27,32 @@ impl Screen2d {
         let logical = [physical[0] / hidpi_factor, physical[1] / hidpi_factor];
         Self::from_logical(logical, hidpi_factor)
     }
-    pub(crate) fn from_logical_r32(logical: [R32;2], hidpi_factor: R32) -> Self {
+    pub(crate) fn from_logical_r32(logical: [R32; 2], hidpi_factor: R32) -> Self {
         Self {
-            logical, hidpi_factor
+            logical,
+            hidpi_factor,
         }
     }
-    pub(crate) fn from_logical_position(pos: LogicalPosition, hidpi_factor: R32) -> Self {
+    pub(crate) fn from_physical_size_u32(physical: &PhysicalSize<u32>, hidpi_factor: f32) -> Self {
+        let w = physical.width;
+        let h = physical.height;
+        Self::from_physical_u32([w, h], hidpi_factor)
+    }
+    pub(crate) fn from_physical_position_i32(
+        pos: &PhysicalPosition<i32>,
+        hidpi_factor: R32,
+    ) -> Self {
         Self {
             logical: [r32(pos.x as f32), r32(pos.y as f32)],
             hidpi_factor,
         }
     }
-    pub(crate) fn from_logical_size(pos: LogicalSize, hidpi_factor: R32) -> Self {
+    pub(crate) fn from_physical_position_f64(
+        pos: &PhysicalPosition<f64>,
+        hidpi_factor: R32,
+    ) -> Self {
         Self {
-            logical: [r32(pos.width as f32), r32(pos.height as f32)],
+            logical: [r32(pos.x as f32), r32(pos.y as f32)],
             hidpi_factor,
         }
     }

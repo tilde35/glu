@@ -3,8 +3,9 @@
 
 use crate::event_state::{EventState, MouseButtonState};
 use crate::screen_units::Screen2d;
-use glium::glutin as gl;
-use glium::glutin::{DeviceId, VirtualKeyCode, WindowId};
+use glium::glutin::event as gle;
+use glium::glutin::event::{DeviceId, VirtualKeyCode};
+use glium::glutin::window::WindowId;
 use noisy_float::prelude::*;
 use std::path::PathBuf;
 
@@ -19,6 +20,7 @@ pub enum Event {
     AppAwaken,
     AppResume,
     AppSuspend,
+    Placeholder,
 
     WindowResize {
         win_id: WindowId,
@@ -196,85 +198,96 @@ impl Event {
         }
     }
 
-    pub fn from_gl(src: &gl::Event, state: &mut EventState) -> Event {
+    pub fn from_gl<T>(src: &gle::Event<T>, state: &mut EventState) -> Event {
         match *src {
-            gl::Event::WindowEvent {
+            gle::Event::WindowEvent {
                 window_id,
                 ref event,
             } => Self::from_window_event(window_id, event, state),
 
-            gl::Event::DeviceEvent {
+            gle::Event::DeviceEvent {
                 device_id,
                 ref event,
             } => Self::from_device_event(device_id, event, state),
 
-            // In recent winit versions, this has been moved from WindowEvent to here
-            gl::Event::Suspended(true) => Event::AppSuspend,
-            gl::Event::Suspended(false) => Event::AppResume,
-            gl::Event::Awakened => Event::AppAwaken,
+            gle::Event::Suspended => Event::AppSuspend,
+            gle::Event::Resumed => Event::AppResume,
+
+            // New events (ignored for now)
+            gle::Event::NewEvents(_) => Event::Placeholder,
+            gle::Event::UserEvent(_) => Event::Placeholder,
+            gle::Event::MainEventsCleared => Event::Placeholder,
+            gle::Event::RedrawRequested(_) => Event::Placeholder,
+            gle::Event::RedrawEventsCleared => Event::Placeholder,
+            gle::Event::LoopDestroyed => Event::Placeholder,
         }
     }
 
-    fn from_window_event(
+    fn from_window_event<'a>(
         win_id: WindowId,
-        evt: &gl::WindowEvent,
+        evt: &gle::WindowEvent,
         evt_state: &mut EventState,
     ) -> Event {
-        match *evt {
-            gl::WindowEvent::Resized(logical_size) => {
+        match evt {
+            gle::WindowEvent::Resized(phys_size) => {
                 let size = {
                     let w = evt_state.get_or_create_win(win_id);
                     let f = w.hidpi_factor;
-                    let size = Screen2d::from_logical_size(logical_size, f);
+                    let size = Screen2d::from_physical_size_u32(phys_size, f.const_raw());
                     w.dim = size;
                     size
                 };
                 Event::WindowResize { win_id, size }
             }
-            gl::WindowEvent::Moved(logical_pos) => {
+            gle::WindowEvent::Moved(logical_pos) => {
                 let f = evt_state.get_or_create_win(win_id).hidpi_factor;
-                let pos = Screen2d::from_logical_position(logical_pos, f);
+                let pos = Screen2d::from_physical_position_i32(logical_pos, f);
                 Event::WindowMove { win_id, pos }
             }
-            gl::WindowEvent::CloseRequested => Event::WindowClose { win_id },
-            gl::WindowEvent::Destroyed => {
+            gle::WindowEvent::CloseRequested => Event::WindowClose { win_id },
+            gle::WindowEvent::Destroyed => {
                 evt_state.window_destroyed(win_id);
                 Event::WindowDestroyed { win_id }
             }
-            gl::WindowEvent::Refresh => Event::WindowRefresh { win_id },
-            gl::WindowEvent::Focused(true) => Event::WindowFocus { win_id },
-            gl::WindowEvent::Focused(false) => Event::WindowBlur { win_id },
+            //gle::WindowEvent::Refresh => Event::WindowRefresh { win_id },
+            gle::WindowEvent::Focused(true) => Event::WindowFocus { win_id },
+            gle::WindowEvent::Focused(false) => Event::WindowBlur { win_id },
 
-            gl::WindowEvent::DroppedFile(ref path) => Event::FileDrop {
+            gle::WindowEvent::DroppedFile(ref path) => Event::FileDrop {
                 win_id,
                 path: path.clone(),
             },
-            gl::WindowEvent::HoveredFile(ref path) => Event::FileHover {
+            gle::WindowEvent::HoveredFile(ref path) => Event::FileHover {
                 win_id,
                 path: path.clone(),
             },
-            gl::WindowEvent::HoveredFileCancelled => Event::FileCancel { win_id },
+            gle::WindowEvent::HoveredFileCancelled => Event::FileCancel { win_id },
 
-            gl::WindowEvent::ReceivedCharacter(codepoint) => {
+            gle::WindowEvent::ReceivedCharacter(codepoint) => {
                 if evt_state.ctrl_down {
                     Event::KeyText {
                         win_id,
-                        codepoint,
+                        codepoint: *codepoint,
                         ch: None,
                     }
                 } else {
                     Event::KeyText {
                         win_id,
-                        codepoint,
-                        ch: Self::text_char(codepoint),
+                        codepoint: *codepoint,
+                        ch: Self::text_char(*codepoint),
                     }
                 }
             }
-            gl::WindowEvent::KeyboardInput { device_id, input } => {
+            gle::WindowEvent::KeyboardInput {
+                device_id,
+                input,
+                is_synthetic,
+            } => {
+                let _ = is_synthetic;
                 Self::set_modifiers(evt_state, &input.modifiers);
 
                 match (input.state, input.virtual_keycode) {
-                    (gl::ElementState::Pressed, Some(VirtualKeyCode::Escape)) => {
+                    (gle::ElementState::Pressed, Some(VirtualKeyCode::Escape)) => {
                         if evt_state.mouse_left.pressed {
                             evt_state.mouse_left.cancelled = true;
                         }
@@ -289,135 +302,141 @@ impl Event {
                 }
 
                 match input.state {
-                    gl::ElementState::Pressed => Event::KeyDown {
+                    gle::ElementState::Pressed => Event::KeyDown {
                         win_id,
-                        device_id,
+                        device_id: *device_id,
                         code: input.scancode,
                         vkey: input.virtual_keycode,
                     },
-                    gl::ElementState::Released => Event::KeyUp {
+                    gle::ElementState::Released => Event::KeyUp {
                         win_id,
-                        device_id,
+                        device_id: *device_id,
                         code: input.scancode,
                         vkey: input.virtual_keycode,
                     },
                 }
             }
 
-            gl::WindowEvent::CursorMoved {
+            gle::WindowEvent::CursorMoved {
                 device_id,
                 position,
-                modifiers: _,
+                ..
             } => {
                 let f = evt_state.get_or_create_win(win_id).hidpi_factor;
-                let pos = Screen2d::from_logical_position(position, f);
+                let pos = Screen2d::from_physical_position_f64(position, f);
                 evt_state.mouse_pos = pos;
                 if !evt_state.is_any_mouse_button_pressed() {
                     evt_state.mouse_activity_start = pos;
                 }
                 Event::MouseMove {
                     win_id,
-                    device_id,
+                    device_id: *device_id,
                     pos,
                 }
             }
-            gl::WindowEvent::CursorEntered { device_id } => {
+            gle::WindowEvent::CursorEntered { device_id } => {
                 evt_state.mouse_in_window = true;
-                Event::MouseWindowEnter { win_id, device_id }
+                Event::MouseWindowEnter {
+                    win_id,
+                    device_id: *device_id,
+                }
             }
-            gl::WindowEvent::CursorLeft { device_id } => {
+            gle::WindowEvent::CursorLeft { device_id } => {
                 evt_state.mouse_in_window = false;
-                Event::MouseWindowLeave { win_id, device_id }
+                Event::MouseWindowLeave {
+                    win_id,
+                    device_id: *device_id,
+                }
             }
-            gl::WindowEvent::MouseWheel {
+            gle::WindowEvent::MouseWheel {
                 device_id,
                 delta,
                 phase,
-                modifiers: _,
+                ..
             } => match delta {
-                gl::MouseScrollDelta::LineDelta(dx, dy) => {
+                gle::MouseScrollDelta::LineDelta(dx, dy) => {
                     let f = evt_state.get_or_create_win(win_id).hidpi_factor;
                     let delta = Screen2d::from_line_delta(
-                        r32(dx),
-                        r32(dy),
+                        r32(*dx),
+                        r32(*dy),
                         evt_state.logical_line_height,
                         f,
                     );
                     Event::MouseWheel {
                         win_id,
-                        device_id,
+                        device_id: *device_id,
                         delta,
-                        delta_line: Some([dx, dy]),
-                        phase: TouchPhase::from_gl(phase),
+                        delta_line: Some([*dx, *dy]),
+                        phase: TouchPhase::from_gl(*phase),
                     }
                 }
-                gl::MouseScrollDelta::PixelDelta(logical_pos) => {
+                gle::MouseScrollDelta::PixelDelta(phys_pos) => {
                     let f = evt_state.get_or_create_win(win_id).hidpi_factor;
-                    let delta = Screen2d::from_logical_position(logical_pos, f);
+                    let delta = Screen2d::from_physical_position_f64(phys_pos, f);
                     Event::MouseWheel {
                         win_id,
-                        device_id,
+                        device_id: *device_id,
                         delta,
                         delta_line: None,
-                        phase: TouchPhase::from_gl(phase),
+                        phase: TouchPhase::from_gl(*phase),
                     }
                 }
             },
-            gl::WindowEvent::MouseInput {
+            gle::WindowEvent::MouseInput {
                 device_id,
                 state,
                 button,
-                modifiers: _,
+                ..
             } => match state {
-                gl::ElementState::Pressed => {
+                gle::ElementState::Pressed => {
                     let pos = evt_state.mouse_pos;
-                    if let Some(d) = Self::mouse_data_for(evt_state, button) {
+                    if let Some(d) = Self::mouse_data_for(evt_state, *button) {
                         d.pressed = true;
                         d.pressed_at = pos;
                         d.cancelled = false;
                     }
                     Event::MouseDown {
                         win_id,
-                        device_id,
-                        button: MouseButton::from_gl(button),
+                        device_id: *device_id,
+                        button: MouseButton::from_gl(*button),
                     }
                 }
-                gl::ElementState::Released => {
-                    if let Some(d) = Self::mouse_data_for(evt_state, button) {
+                gle::ElementState::Released => {
+                    if let Some(d) = Self::mouse_data_for(evt_state, *button) {
                         d.pressed = false;
                     }
                     Event::MouseUp {
                         win_id,
-                        device_id,
-                        button: MouseButton::from_gl(button),
+                        device_id: *device_id,
+                        button: MouseButton::from_gl(*button),
                     }
                 }
             },
 
-            gl::WindowEvent::AxisMotion {
+            gle::WindowEvent::AxisMotion {
                 device_id,
                 axis,
                 value,
             } => Event::AxisMotion {
                 win_id,
-                device_id,
-                axis,
-                delta: value as f32,
+                device_id: *device_id,
+                axis: *axis,
+                delta: *value as f32,
             },
 
-            gl::WindowEvent::TouchpadPressure {
+            gle::WindowEvent::TouchpadPressure {
                 device_id,
                 pressure,
                 stage,
             } => Event::TouchpadPressure {
                 win_id,
-                device_id,
-                pressure,
-                stage,
+                device_id: *device_id,
+                pressure: *pressure,
+                stage: *stage,
             },
-            gl::WindowEvent::Touch(ref t) => {
+            gle::WindowEvent::Touch(ref t) => {
                 let f = evt_state.get_or_create_win(win_id).hidpi_factor;
-                let s = Screen2d::from_logical_position(t.location, f);
+                let s = Screen2d::from_physical_position_f64(&t.location, f);
                 Event::Touch {
                     win_id,
                     device_id: t.device_id,
@@ -426,28 +445,37 @@ impl Event {
                     phase: TouchPhase::from_gl(t.phase),
                 }
             }
-            gl::WindowEvent::HiDpiFactorChanged(factor) => {
-                let factor = factor as f32;
+            gle::WindowEvent::ScaleFactorChanged {
+                scale_factor,
+                new_inner_size,
+            } => {
+                let _ = new_inner_size;
+                let factor = *scale_factor as f32;
                 evt_state.get_or_create_win(win_id).hidpi_factor = r32(factor);
                 Event::HiDpiFactorChanged { win_id, factor }
             }
+            gle::WindowEvent::ModifiersChanged(_m) => {
+                // TODO! Assign modifiers in the future
+                Event::Placeholder
+            }
+            gle::WindowEvent::ThemeChanged(_t) => Event::Placeholder,
         }
     }
 
     fn from_device_event(
         device_id: DeviceId,
-        evt: &gl::DeviceEvent,
+        evt: &gle::DeviceEvent,
         state: &mut EventState,
     ) -> Event {
         match *evt {
-            gl::DeviceEvent::Added => Event::DeviceAdded { device_id },
-            gl::DeviceEvent::Removed => Event::DeviceRemoved { device_id },
-            gl::DeviceEvent::MouseMotion { delta } => Event::MouseMotion {
+            gle::DeviceEvent::Added => Event::DeviceAdded { device_id },
+            gle::DeviceEvent::Removed => Event::DeviceRemoved { device_id },
+            gle::DeviceEvent::MouseMotion { delta } => Event::MouseMotion {
                 device_id,
                 delta: [delta.0 as f32, delta.1 as f32],
             },
-            gl::DeviceEvent::MouseWheel { delta } => match delta {
-                gl::MouseScrollDelta::LineDelta(dx, dy) => {
+            gle::DeviceEvent::MouseWheel { delta } => match delta {
+                gle::MouseScrollDelta::LineDelta(dx, dy) => {
                     let f = state.hidpi_factor_r32();
                     let delta =
                         Screen2d::from_line_delta(r32(dx), r32(dy), state.logical_line_height, f);
@@ -457,9 +485,9 @@ impl Event {
                         delta_line: Some([dx, dy]),
                     }
                 }
-                gl::MouseScrollDelta::PixelDelta(logical_pos) => {
+                gle::MouseScrollDelta::PixelDelta(phys_pos) => {
                     let f = state.hidpi_factor_r32();
-                    let delta = Screen2d::from_logical_position(logical_pos, f);
+                    let delta = Screen2d::from_physical_position_f64(&phys_pos, f);
                     Event::AnywhereMouseWheel {
                         device_id,
                         delta,
@@ -467,35 +495,35 @@ impl Event {
                     }
                 }
             },
-            gl::DeviceEvent::Motion { axis, value } => Event::DeviceMotion {
+            gle::DeviceEvent::Motion { axis, value } => Event::DeviceMotion {
                 device_id,
                 axis,
                 delta: value as f32,
             },
-            gl::DeviceEvent::Button {
+            gle::DeviceEvent::Button {
                 button,
-                state: gl::ElementState::Pressed,
+                state: gle::ElementState::Pressed,
             } => Event::DeviceButtonDown { device_id, button },
-            gl::DeviceEvent::Button {
+            gle::DeviceEvent::Button {
                 button,
-                state: gl::ElementState::Released,
+                state: gle::ElementState::Released,
             } => Event::DeviceButtonUp { device_id, button },
-            gl::DeviceEvent::Key(key_input) => {
+            gle::DeviceEvent::Key(key_input) => {
                 Self::set_modifiers(state, &key_input.modifiers);
                 match key_input.state {
-                    gl::ElementState::Pressed => Event::DeviceKeyDown {
+                    gle::ElementState::Pressed => Event::DeviceKeyDown {
                         device_id,
                         code: key_input.scancode,
                         vkey: key_input.virtual_keycode,
                     },
-                    gl::ElementState::Released => Event::DeviceKeyUp {
+                    gle::ElementState::Released => Event::DeviceKeyUp {
                         device_id,
                         code: key_input.scancode,
                         vkey: key_input.virtual_keycode,
                     },
                 }
             }
-            gl::DeviceEvent::Text { codepoint } => Event::DeviceText {
+            gle::DeviceEvent::Text { codepoint } => Event::DeviceText {
                 device_id,
                 codepoint,
                 ch: Self::text_char(codepoint),
@@ -505,21 +533,21 @@ impl Event {
 
     fn mouse_data_for<'a>(
         state: &'a mut EventState,
-        b: gl::MouseButton,
+        b: gle::MouseButton,
     ) -> Option<&'a mut MouseButtonState> {
         match b {
-            gl::MouseButton::Left => Some(&mut state.mouse_left),
-            gl::MouseButton::Middle => Some(&mut state.mouse_middle),
-            gl::MouseButton::Right => Some(&mut state.mouse_right),
+            gle::MouseButton::Left => Some(&mut state.mouse_left),
+            gle::MouseButton::Middle => Some(&mut state.mouse_middle),
+            gle::MouseButton::Right => Some(&mut state.mouse_right),
             _ => None,
         }
     }
 
-    fn set_modifiers(state: &mut EventState, modifiers: &gl::ModifiersState) {
-        state.shift_down = modifiers.shift;
-        state.ctrl_down = modifiers.ctrl;
-        state.alt_down = modifiers.alt;
-        state.logo_down = modifiers.logo;
+    fn set_modifiers(state: &mut EventState, modifiers: &gle::ModifiersState) {
+        state.shift_down = modifiers.shift();
+        state.ctrl_down = modifiers.ctrl();
+        state.alt_down = modifiers.alt();
+        state.logo_down = modifiers.logo();
     }
 
     fn text_char(ch: char) -> Option<char> {
@@ -548,12 +576,12 @@ pub enum MouseButton {
     Other(u8),
 }
 impl MouseButton {
-    fn from_gl(btn: gl::MouseButton) -> Self {
+    fn from_gl(btn: gle::MouseButton) -> Self {
         match btn {
-            gl::MouseButton::Left => MouseButton::Left,
-            gl::MouseButton::Right => MouseButton::Right,
-            gl::MouseButton::Middle => MouseButton::Middle,
-            gl::MouseButton::Other(n) => MouseButton::Other(n),
+            gle::MouseButton::Left => MouseButton::Left,
+            gle::MouseButton::Right => MouseButton::Right,
+            gle::MouseButton::Middle => MouseButton::Middle,
+            gle::MouseButton::Other(n) => MouseButton::Other(n as u8),
         }
     }
 }
@@ -566,12 +594,12 @@ pub enum TouchPhase {
     Cancelled,
 }
 impl TouchPhase {
-    fn from_gl(phase: gl::TouchPhase) -> Self {
+    fn from_gl(phase: gle::TouchPhase) -> Self {
         match phase {
-            gl::TouchPhase::Started => TouchPhase::Started,
-            gl::TouchPhase::Moved => TouchPhase::Moved,
-            gl::TouchPhase::Ended => TouchPhase::Ended,
-            gl::TouchPhase::Cancelled => TouchPhase::Cancelled,
+            gle::TouchPhase::Started => TouchPhase::Started,
+            gle::TouchPhase::Moved => TouchPhase::Moved,
+            gle::TouchPhase::Ended => TouchPhase::Ended,
+            gle::TouchPhase::Cancelled => TouchPhase::Cancelled,
         }
     }
 }

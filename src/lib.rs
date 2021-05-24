@@ -25,4 +25,5 @@ pub use crate::event::{AxisId, ButtonId, Event, FingerId, MouseButton, ScanCode,
 pub use crate::event_state::{EventState, MouseButtonState};
 pub use crate::screen_units::Screen2d;
 pub use crate::time_step::TimeStep;
-pub use glium::glutin::{DeviceId, VirtualKeyCode, WindowId};
+pub use glium::glutin::event::{DeviceId, VirtualKeyCode};
+pub use glium::glutin::window::WindowId;

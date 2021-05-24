@@ -23,7 +23,7 @@ pub struct EventState {
 impl EventState {
     pub fn new(display: &glium::Display) -> Self {
         use glium::backend::Facade;
-        let hidpi_factor = display.gl_window().window().get_hidpi_factor() as f32;
+        let hidpi_factor = display.gl_window().window().scale_factor() as f32;
         let win_id = display.gl_window().window().id();
         let win_dim = display.get_context().get_framebuffer_dimensions();
         let win_dim = Screen2d::from_physical_u32([win_dim.0, win_dim.1], hidpi_factor);
@@ -71,7 +71,7 @@ impl EventState {
             .map(|w| w.hidpi_factor)
             .unwrap_or(r32(1.0))
     }
-    pub(crate) fn get_or_create_win<'a>(&'a mut self, id: gl::WindowId) -> &'a mut WindowData {
+    pub(crate) fn get_or_create_win<'a>(&'a mut self, id: crate::WindowId) -> &'a mut WindowData {
         let idx = self
             .windows
             .iter()
@@ -91,7 +91,7 @@ impl EventState {
             &mut self.windows[idx]
         }
     }
-    pub(crate) fn window_destroyed(&mut self, id: gl::WindowId) {
+    pub(crate) fn window_destroyed(&mut self, id: crate::WindowId) {
         self.windows.retain(|w| w.id != id);
     }
 
@@ -121,7 +121,7 @@ impl EventState {
         }
         None
     }
-    pub fn process_event(&mut self, evt: &gl::Event) -> Event {
+    pub fn process_event<T>(&mut self, evt: &gl::event::Event<T>) -> Event {
         Event::from_gl(evt, self)
     }
     pub fn get_mouse_drag_dist(&self) -> Option<Screen2d> {
@@ -170,12 +170,12 @@ impl Default for MouseButtonState {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct WindowData {
-    pub id: gl::WindowId,
+    pub id: crate::WindowId,
     pub dim: Screen2d,
     pub(crate) hidpi_factor: R32,
 }
 impl WindowData {
-    pub fn new(id: gl::WindowId, dim: Screen2d, hidpi_factor: f32) -> Self {
+    pub fn new(id: crate::WindowId, dim: Screen2d, hidpi_factor: f32) -> Self {
         assert!(hidpi_factor > 0.0, "HiDPI factor must be greater than zero");
         let hidpi_factor = r32(hidpi_factor);
         Self {

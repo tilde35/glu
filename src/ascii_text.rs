@@ -91,7 +91,7 @@ impl AsciiText {
         let win_size = display.get_context().get_framebuffer_dimensions();
 
         // Adjust for DPI factor
-        let hidpi_factor = display.gl_window().window().get_hidpi_factor() as f32;
+        let hidpi_factor = display.gl_window().window().scale_factor() as f32;
         let scale = scale * hidpi_factor;
         let pos = [pos[0] * hidpi_factor, pos[1] * hidpi_factor];
 
