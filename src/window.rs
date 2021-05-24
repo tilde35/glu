@@ -13,6 +13,7 @@ impl Window {
             inner_dim: [600.0, 400.0],
             logical: true,
             vsync: false,
+            depth_buffer_bits: None,
         }
     }
 
@@ -58,6 +59,7 @@ pub struct WindowBuilder {
     title: String,
     inner_dim: [f32; 2],
     logical: bool,
+    depth_buffer_bits: Option<u8>,
     vsync: bool,
 }
 impl WindowBuilder {
@@ -73,6 +75,10 @@ impl WindowBuilder {
     }
     pub fn with_vsync(mut self, vsync: bool) -> Self {
         self.vsync = vsync;
+        self
+    }
+    pub fn with_depth_buffer(mut self, bits: u8) -> Self {
+        self.depth_buffer_bits = Some(bits);
         self
     }
     pub fn create(self) -> Window {
@@ -91,7 +97,10 @@ impl WindowBuilder {
         let window = glutin::window::WindowBuilder::new()
             .with_inner_size(size)
             .with_title(&self.title);
-        let context = glutin::ContextBuilder::new().with_vsync(self.vsync);
+        let mut context = glutin::ContextBuilder::new().with_vsync(self.vsync);
+        if let Some(bits) = self.depth_buffer_bits {
+            context = context.with_depth_buffer(bits);
+        }
         let display = glium::Display::new(window, context, &event_loop).unwrap();
         let event_state = EventState::new(&display);
         Window {
