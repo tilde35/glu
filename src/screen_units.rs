@@ -33,28 +33,20 @@ impl Screen2d {
             hidpi_factor,
         }
     }
-    pub(crate) fn from_physical_size_u32(physical: &PhysicalSize<u32>, hidpi_factor: f32) -> Self {
-        let w = physical.width;
-        let h = physical.height;
-        Self::from_physical_u32([w, h], hidpi_factor)
+    pub(crate) fn from_physical_size_u32(size: &PhysicalSize<u32>, hidpi_factor: f32) -> Self {
+        Self::from_physical_f32([size.width as f32, size.height as f32], hidpi_factor)
     }
     pub(crate) fn from_physical_position_i32(
         pos: &PhysicalPosition<i32>,
         hidpi_factor: R32,
     ) -> Self {
-        Self {
-            logical: [r32(pos.x as f32), r32(pos.y as f32)],
-            hidpi_factor,
-        }
+        Self::from_physical_f32([pos.x as f32, pos.y as f32], hidpi_factor.raw())
     }
     pub(crate) fn from_physical_position_f64(
         pos: &PhysicalPosition<f64>,
         hidpi_factor: R32,
     ) -> Self {
-        Self {
-            logical: [r32(pos.x as f32), r32(pos.y as f32)],
-            hidpi_factor,
-        }
+        Self::from_physical_f32([pos.x as f32, pos.y as f32], hidpi_factor.raw())
     }
     pub(crate) fn from_line_delta(
         delta_x: R32,
