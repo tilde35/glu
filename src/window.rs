@@ -14,6 +14,7 @@ impl Window {
             logical: true,
             vsync: false,
             depth_buffer_bits: None,
+            icon: None,
         }
     }
 
@@ -61,6 +62,7 @@ pub struct WindowBuilder {
     logical: bool,
     depth_buffer_bits: Option<u8>,
     vsync: bool,
+    icon: Option<glutin::window::Icon>,
 }
 impl WindowBuilder {
     pub fn with_inner_logical(mut self, dim: [f32; 2]) -> Self {
@@ -81,6 +83,14 @@ impl WindowBuilder {
         self.depth_buffer_bits = Some(bits);
         self
     }
+    pub fn with_glutin_icon(mut self, icon: glutin::window::Icon) -> Self {
+        self.icon = Some(icon);
+        self
+    }
+    pub fn with_icon_rgba(self, rgba: Vec<u8>, width: u32, height: u32) -> Self {
+        let icon = glutin::window::Icon::from_rgba(rgba, width, height).expect("Invalid icon");
+        self.with_glutin_icon(icon)
+    }
     pub fn create(self) -> Window {
         let size = if self.logical {
             glutin::dpi::Size::Logical(glutin::dpi::LogicalSize {
@@ -96,7 +106,8 @@ impl WindowBuilder {
         let event_loop = glutin::event_loop::EventLoop::new();
         let window = glutin::window::WindowBuilder::new()
             .with_inner_size(size)
-            .with_title(&self.title);
+            .with_title(&self.title)
+            .with_window_icon(self.icon);
         let mut context = glutin::ContextBuilder::new().with_vsync(self.vsync);
         if let Some(bits) = self.depth_buffer_bits {
             context = context.with_depth_buffer(bits);
